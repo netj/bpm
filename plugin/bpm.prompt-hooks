@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# vocabularies for manipulating PROMPT_COMMAND hooks
+# 
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2011-12-24
+################################################################################
+
+bash_plugin_load() {
+
+# registering handlers
+PROMPT_COMMAND=""
+bash_insert_prompt() {
+    PROMPT_COMMAND="$1;$PROMPT_COMMAND"
+}
+bash_add_prompt() {
+    PROMPT_COMMAND="$PROMPT_COMMAND$1;"
+}
+
+}

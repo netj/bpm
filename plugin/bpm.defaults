@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# vocabularies for defining default configuration
+# 
+# Author: Jaeho Shin <netj@sparcs.kaist.ac.kr>
+# Created: 2004-05-27
+################################################################################
+
+bash_plugin_load() {
+
+bash_default() {
+    local name=$1
+    local value=$2
+    if [ -n "${!name}" ]; then
+        false
+    else
+        eval "$name='${value//\'/\'\\\'\'}'"
+        true
+    fi
+}
+bash_default_env() {
+    bash_default "$@"
+    export $1
+}
+bash_default_alias() {
+    alias "$1" 2>/dev/null >&2 || alias "$1"="$2"
+}
+
+}

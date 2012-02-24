@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# bpm -- Bash Plug-in Manager -- http://netj.github.com/bpm
+#   A modular approach to managing and sharing bashrc
+# 
+# Usage:
+#   bpm ls [PLUGIN...]
+#   bpm find [PLUGIN...]
+#   bpm info PLUGIN...
+# 
+#   bpm enable PLUGIN...
+#   bpm on PLUGIN...
+# 
+#   bpm disable PLUGIN...
+#   bpm off PLUGIN...
+# 
+#   bpm load
+#   bpm vocabularies
+# 
+#   bpm help
+#
+
+BPM=${BASH_SOURCE:-$0}
+BPM_HOME=$(cd $(dirname "$BPM"); pwd)
+bpm() {
+    local Cmd=$1; shift
+    local exitcode=0
+
+    msg() { echo bpm: "$@"; }
+    error() { msg "$@" >&2; return 1; }
+    if ${BPM_LOADED:-false}; then
+        info() { msg "$@"; }
+    else
+        info() { :; }
+    fi
+
+    local bpm_hr1="================================================================================"
+    local bpm_hr2="--------------------------------------------------------------------------------"
+
+    bpm_list() {
+        local where=$1; shift
+        # TODO
+        (
+        mkdir -p "$BPM_HOME"/"$where"
+        cd "$BPM_HOME"/"$where"
+        [ $# -gt 0 ] || set -- *
+        eval \\ls "$@" 2>/dev/null
+        )
+    }
+
+    bpm_is() {
+        local t=$1; shift
+        local p=$1; shift
+        local negative_msg=$1; shift
+        local positive_msg=$1; shift
+        if [ -e "$BPM_HOME"/$t/"$p" ]; then
+            [ -z "$positive_msg" ] || error "$p: $positive_msg"
+        else
+            [ -n "$positive_msg" ] || error "$p: ${negative_msg:-No such bash plug-in}"
+        fi
+    }
+
+    bpm_info() {
+        local p=$1
+        local t="$p bash plug-in"
+        echo "$t"
+        echo "${bpm_hr1:0:${#t}}"
+        sed <"$BPM_HOME"/plugin/"$p" -n '
+        \@^#!/.*bash@, /^###*$/ {
+            /^# / s/^# //p
+            /^###*$/ q
+        }
+        '
+    }
+
+    bpm_load1() {
+        local bash_plugin=$1; shift
+        bash_plugin_load() { :; }
+        bash_plugin_login() { :; }
+        # source the plug-in
+        info "loading $bash_plugin"
+        . "$BPM_HOME"/plugin/"$bash_plugin"
+        # and load it
+        bash_plugin_load
+        # and load more for login shells
+        ! shopt -q login_shell || bash_plugin_login
+        unset bash_plugin_{load,login}
+    }
+    bpm_load() {
+        local p=
+        for p; do bpm_load1 "$p"; done
+    }
+
+    bpm_list_enabled_by_deps() {
+        (
+        cd "$BPM_HOME"/enabled
+        local latest=$(\ls -tdL . * | head -n 1)
+        # echo $latest >&2
+        if [ ../enabled.deps -nt $latest ]; then
+            cat ../enabled.deps
+        else
+            info "computing dependencies..." >&2
+            # analyze the "# Requires: " lines to order by dependencies
+            tmp=`mktemp -d ../enabled.deps.XXXXXX`
+            trap "rm -rf $tmp" EXIT
+            \ls | tee $tmp/more >$tmp/seen
+            while [ -s $tmp/more ]; do
+                # cat $tmp/more >&2; echo >&2
+                local ps=$(cat $tmp/more; : >$tmp/more)
+                for p in $ps; do
+                    for dep in $(sed -n '/^# Requires: / s/^# Requires: *//p' <"$BPM_HOME"/plugin/"$p"); do
+                        if ! grep -q "^$dep$" $tmp/seen; then
+                            bpm_is plugin "$dep" "Unknown plug-in required by $p" || continue
+                            echo "$dep" >>$tmp/more
+                            echo "$dep" >>$tmp/seen
+                        fi
+                        echo "$dep $p"
+                    done
+                    echo "$p" .
+                done
+            done | tsort | grep -v '^\.$' |
+            tee ../enabled.deps
+        fi
+        )
+    }
+
+    case $Cmd in
+        find)
+            bpm_list plugin "$@" || bpm_list plugin "${@/%/*}"
+            ;;
+
+        ls)
+            bpm_list enabled "$@" || bpm_list enabled "${@/%/*}"
+            ;;
+
+        info)
+            local first_info=true
+            local p=
+            for p; do
+                bpm_is plugin "$p" || continue
+                $first_info || { echo "$bpm_hr2"; echo; }; first_info=false
+                bpm_info "$p"
+            done
+            ;;
+
+        enable|on)
+            (
+            mkdir -p "$BPM_HOME"/enabled
+            cd "$BPM_HOME"/enabled
+            for p; do
+                bpm_is plugin "$p" || continue
+                bpm_is enabled "$p" "" "Already enabled" || continue
+                ln -sfn ../plugin/"$p"
+                msg "$p: Enabled"
+            done
+            )
+            ;;
+
+        disable|off)
+            (
+            mkdir -p "$BPM_HOME"/enabled
+            cd "$BPM_HOME"/enabled
+            for p; do
+                bpm_is enabled "$p" "Not enabled" || continue
+                unlink "$p"
+                msg "$p: Disabled"
+            done
+            )
+            ;;
+
+        vocabularies) # load only vocabularies
+            bpm_load $(bpm_list plugin bpm.\*)
+            ;;
+
+        load) # load all plug-ins
+            bpm_load $(bpm_list_enabled_by_deps)
+            BPM_LOADED=true
+            ;;
+
+        help|*)
+            # usage
+            sed -n '2,/^#$/ s/^# //p' <"$BPM"
+            exitcode=2
+            ;;
+    esac
+    unset msg error info  bpm_is bpm_info bpm_list bpm_list_enabled_by_deps bpm_load bpm_load1
+    return $exitcode
+}
+
+# bpm autocompletion
+__bpmcomp() {
+    local cur prev
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+    if [[ ${#COMP_WORDS[@]} > 2 ]]; then
+        case ${COMP_WORDS[1]} in
+            find|info)
+                COMPREPLY=($(compgen -W "$(bpm find)" -- "$cur"))
+                ;;
+            enable|on)
+                [ "$BPM_HOME"/enabled.all -nt "$BPM_HOME"/enabled.deps ] || sort "$BPM_HOME"/enabled.deps >"$BPM_HOME"/enabled.all
+                COMPREPLY=($(compgen -W "$(bpm find | comm -23 - "$BPM_HOME"/enabled.all)" -- "$cur"))
+                ;;
+            ls|disable|off)
+                COMPREPLY=($(compgen -W "$(bpm ls)" -- "$cur"))
+                ;;
+        esac
+    else
+        COMPREPLY=($(compgen -W "ls find info enable on disable off vocabularies load help" -- "$cur"))
+    fi
+}
+complete -F __bpmcomp bpm
+
+# pass arguments to bpm if any
+[ $# -eq 0 ] || bpm "$@"
