@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Git aliases and etc.
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2012-06-13
+# Requires: bpm.defaults
+################################################################################
+
+bash_plugin_login() {
+    bash_default_alias g "git status"
+    bash_default_alias gd "git diff"
+}
