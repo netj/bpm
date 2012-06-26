@@ -7,6 +7,9 @@
 ################################################################################
 
 bash_plugin_login() {
-    bash_default_alias g "git status"
-    bash_default_alias gd "git diff"
+    bash_default_alias g    "git status"
+    bash_default_alias gd   "git diff"
+    bash_default_alias gdc  "git diff --cached"
+    bash_default_alias ga   "git add"
+    bash_default_alias gau  "git add -u"
 }
