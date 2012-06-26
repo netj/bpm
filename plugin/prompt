@@ -51,8 +51,8 @@ bash_plugin_load() {
     bash_default      no_color $'\E[0m'
 
     bash_default prompt_filler "----------------------------------------"
-    bash_default prompt_host "${HOSTNAME%%.*}"
     bash_default prompt_domain "${HOSTNAME#*.}"
+    bash_default prompt_host "${HOSTNAME%.$prompt_domain}"
 
     # a hack to measure how many columns given string takes
     prompt_takes_width() {
