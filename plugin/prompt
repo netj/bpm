@@ -51,8 +51,7 @@ bash_plugin_load() {
     bash_default      no_color $'\E[0m'
 
     bash_default prompt_filler "----------------------------------------"
-    bash_default prompt_domain "${HOSTNAME#*.}"
-    bash_default prompt_host "${HOSTNAME%.$prompt_domain}"
+    bash_default prompt_host "${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}"
 
     # a hack to measure how many columns given string takes
     prompt_takes_width() {
@@ -113,8 +112,7 @@ bash_plugin_load() {
             prompt_jobs=$nrjobs
             # hostname seldomly changes
             HOSTNAME=`hostname -f`
-            prompt_host=${HOSTNAME%%.*}
-            prompt_domain=${HOSTNAME#*.}
+            prompt_host=${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}
             local pwd=${PWD/#$HOME/\~}
             local changing="$prompt_host$pwd$nrjobs"
             local fillsize=$(($nrcolumns-$prompt_min_width-`prompt_takes_width "$changing"`))
