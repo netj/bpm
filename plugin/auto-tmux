@@ -156,11 +156,11 @@ bash_plugin_login() {
         case $key in
             [nN]) # start a new one per request
                 echo "auto-tmux: starting new session"
-                tmux new-session
+                tmux -2 new-session
                 ;;
             "") # otherwise, default is to resume
                 echo "auto-tmux: resuming previous session"
-                tmux attach-session
+                tmux -2 attach-session
                 ;;
             *) # if any other key was pressed, abort
                 echo "auto-tmux: aborted"
