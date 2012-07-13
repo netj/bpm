@@ -55,7 +55,40 @@ bash_plugin_login() {
     bash_default_env EDITOR vim
     bash_default_env PAGER less
     bash_default_env LESS "-XFRiMW" # --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --ignore-case --LONG-PROMPT --HILITE_UNREAD
-    env() { if [ $# -eq 0 ]; then command env | sort --ignore-case; else command env "$@"; fi }
+    env() { # sorted env
+        if [[ $# -eq 0 ]]; then command env | sort --ignore-case; else command env "$@"; fi
+    }
+    eenv() { # change env with editor
+        local t=$(mktemp -d /tmp/eenv.XXXXXX)
+        # snapshot the environment
+        if [[ $# -gt 0 ]]; then
+            local patt=$(printf '\|^[^=]*%q[^=]*=' "$@")
+            env | grep -i -- "${patt#\\|}"
+        else
+            env
+        fi | grep -v '^_=' >$t/env
+        eenv_varnames() { sed 's/=.*//' | sort; }
+        eenv_varnames <$t/env >$t/vars.old
+        # open editor for it
+        ${EDITOR:-vim} $t/env
+        # and apply the changes to environment
+        local name= value=
+        while IFS="=" read -r name value; do
+            [ x"${!name}" != x"$value" ] || continue
+            export "$name"="$value"
+            echo "$name=$value"
+        done <$t/env
+        # take care of variable removals
+        eenv_varnames <$t/env >$t/vars.new
+        comm -13 $t/vars.new $t/vars.old >$t/vars.unset
+        while read -r name; do
+            unset "$name"
+            echo "unset $name"
+        done <$t/vars.unset
+        # cleanup
+        unset eenv_varnames
+        rm -rf $t
+    }
     # some usability options
     shopt -s nocaseglob cdspell cmdhist
     local uname=`uname`

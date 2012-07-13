@@ -14,8 +14,8 @@ bash_remove_path() {
     for p in "$@"; do
         if [[ "${!v}" =~ :$p:|^$p(:|$)|:$p$ ]]; then
             export $v=${!v//:$p:/:}
-            export $v=${!v//#$p:/}
-            export $v=${!v//%:$p/}
+            export $v=${!v#$p:}
+            export $v=${!v%:$p}
         fi
     done
 }
