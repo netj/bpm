@@ -12,4 +12,6 @@ bash_plugin_login() {
     bash_default_alias gdc  "git diff --cached"
     bash_default_alias ga   "git add"
     bash_default_alias gau  "git add -u"
+    # launch Vim with fugitive :Gstatus
+    bash_default_alias gv   'vim +Gstatus +only "$PWD"'
 }
