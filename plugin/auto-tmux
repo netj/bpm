@@ -41,6 +41,8 @@ bash_plugin_login() {
         # skip attaching to the tmux session
         unset -v auto_tmux_env_root
         unset -f atmux-{reset,save}
+        # leave a shorthand for enabling auto-tmux
+        atmux() { auto_tmux_enable=true bash -l; }
     elif [ -n "$TMUX" ]; then
         # working inside tmux, prepare stuffs
         auto_tmux_link="$auto_tmux_env_root/.$$"
