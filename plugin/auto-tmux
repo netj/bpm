@@ -9,6 +9,8 @@
 
 bash_plugin_login() {
     bash_default auto_tmux_env_root /tmp/auto-tmux.${SUDO_USER:-$LOGNAME}
+    # a shorthand for enabling auto-tmux
+    atmux() { auto_tmux_enable=true exec bash -l; }
     # load values from tmux environment snapshot
     atmux-reset() {
         [ -f "$auto_tmux_link" ] || return
@@ -36,17 +38,17 @@ bash_plugin_login() {
         if ! $bash_autoload; then
             echo "auto-tmux: not found from PATH" >&2
         fi
+        unset atmux
     elif [ -z "$SSH_CONNECTION" -a -z "$auto_tmux_enable" ]; then
         # local shell, but tmux wasn't enabled
         # skip attaching to the tmux session
         unset -v auto_tmux_env_root
         unset -f atmux-{reset,save}
-        # leave a shorthand for enabling auto-tmux
-        atmux() { auto_tmux_enable=true bash -l; }
     elif [ -n "$TMUX" ]; then
         # working inside tmux, prepare stuffs
         auto_tmux_link="$auto_tmux_env_root/.$$"
         unset TERM_PROGRAM TERM_PROGRAM_VERSION
+        unset atmux
 
         # set useful tmux related commands
         -atmux-all() {
