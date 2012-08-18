@@ -51,6 +51,7 @@ bash_plugin_load() {
     bash_default      no_color $'\E[0m'
 
     bash_default prompt_filler "----------------------------------------"
+    bash_default prompt_user "${LOGNAME:-$USER}"
     bash_default prompt_host "${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}"
 
     # a hack to measure how many columns given string takes
@@ -71,7 +72,7 @@ bash_plugin_load() {
 
     # user part
     local user=${LOGNAME:-$USER}
-    [ x"$user" != x"netj" ] || user=
+    [ x"$user" != x"$prompt_user" ] || user=
     local user_plain=${user:+$user@}
     local user_part=${user:+"\[$blue\]$user\[$no_color\]@"}
 
