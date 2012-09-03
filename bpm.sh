@@ -109,17 +109,19 @@ bpm() {
                 # cat $tmp/more >&2; echo >&2
                 local ps=$(cat $tmp/more; : >$tmp/more)
                 for p in $ps; do
-                    for dep in $(sed -n '/^# Requires: / s/^# Requires: *//p' <"$BPM_HOME"/plugin/"$p"); do
-                        if ! grep -q "^$dep$" $tmp/seen; then
+                    local pf="$BPM_HOME"/plugin/"$p"
+                    [ -e "$pf" ] || { error "$p: Dangling plugin enabled"; continue; }
+                    for dep in $(sed -n '/^# Requires: / s/^# Requires: *//p' <"$pf"); do
+                        if ! grep -q "$(printf '^%q$' "$dep")" $tmp/seen; then
                             bpm_is plugin "$dep" "Unknown plug-in required by $p" || continue
                             echo "$dep" >>$tmp/more
                             echo "$dep" >>$tmp/seen
                         fi
                         echo "$dep $p"
                     done
-                    echo "$p" .
+                    echo "$p" '*'
                 done
-            done | tsort | grep -v '^\.$' |
+            done | tsort | grep -v '^*$' |
             tee ../enabled.deps
         fi
         )
