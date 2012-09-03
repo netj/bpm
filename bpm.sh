@@ -19,6 +19,8 @@
 #   bpm help
 #
 
+unset CDPATH
+
 BPM=${BASH_SOURCE:-$0}
 BPM_HOME=$(cd $(dirname "$BPM"); pwd)
 bpm() {
@@ -52,7 +54,7 @@ bpm() {
         local p=$1; shift
         local negative_msg=$1; shift
         local positive_msg=$1; shift
-        if [ -e "$BPM_HOME"/$t/"$p" ]; then
+        if [ -e "$BPM_HOME"/$t/"$p" -o -L "$BPM_HOME"/$t/"$p" ]; then
             [ -z "$positive_msg" ] || error "$p: $positive_msg"
         else
             [ -n "$positive_msg" ] || error "$p: ${negative_msg:-No such bash plug-in}"
