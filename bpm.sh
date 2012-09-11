@@ -19,10 +19,8 @@
 #   bpm help
 #
 
-unset CDPATH
-
 BPM=${BASH_SOURCE:-$0}
-BPM_HOME=$(cd $(dirname "$BPM"); pwd)
+BPM_HOME=$(cd $(dirname "$BPM") &>/dev/null; pwd)
 bpm() {
     local Cmd=$1; shift
     local exitcode=0
@@ -43,7 +41,7 @@ bpm() {
         # TODO
         (
         mkdir -p "$BPM_HOME"/"$where"
-        cd "$BPM_HOME"/"$where"
+        cd "$BPM_HOME"/"$where" &>/dev/null
         [ $# -gt 0 ] || set -- *
         eval \\ls "$@" 2>/dev/null
         )
@@ -94,7 +92,7 @@ bpm() {
 
     bpm_list_enabled_by_deps() {
         (
-        cd "$BPM_HOME"/enabled
+        cd "$BPM_HOME"/enabled &>/dev/null
         local latest=$(\ls -tdL . * | head -n 1)
         # echo $latest >&2
         if [ ../enabled.deps -nt $latest ]; then
@@ -149,7 +147,7 @@ bpm() {
         enable|on)
             (
             mkdir -p "$BPM_HOME"/enabled
-            cd "$BPM_HOME"/enabled
+            cd "$BPM_HOME"/enabled &>/dev/null
             for p; do
                 bpm_is plugin "$p" || continue
                 bpm_is enabled "$p" "" "Already enabled" || continue
@@ -162,7 +160,7 @@ bpm() {
         disable|off)
             (
             mkdir -p "$BPM_HOME"/enabled
-            cd "$BPM_HOME"/enabled
+            cd "$BPM_HOME"/enabled &>/dev/null
             for p; do
                 bpm_is enabled "$p" "Not enabled" || continue
                 unlink "$p"
