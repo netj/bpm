@@ -121,8 +121,12 @@ bash_plugin_login() {
             # remove stale links
             find -L "$auto_tmux_env_root" -type l -exec rm -f {} \;
         }
+        auto_tmux_last_pwd=
         -atmux-sync-default-path() {
-            tmux set default-path "$PWD" >/dev/null
+            if [ x"$PWD" != x"$auto_tmux_last_pwd" ]; then
+                auto_tmux_last_pwd=$PWD
+                tmux set default-path "$PWD" |:
+            fi
         }
         
         # prepare hooks for prompt, cleanup
