@@ -53,6 +53,9 @@ bash_plugin_load() {
             eval \"args=($alias_definition)\"
             let COMP_CWORD+=\${#args[@]}-1
             COMP_WORDS=(\"\${args[@]}\" \"\${COMP_WORDS[@]:1}\")
+            local expanded_COMP_LINE=\${COMP_WORDS[*]}
+            let COMP_POINT+=\${#expanded_COMP_LINE}-\${#COMP_LINE}
+            COMP_LINE=\$expanded_COMP_LINE
             $completion_function
         }
         "
