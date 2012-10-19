@@ -21,10 +21,8 @@ bash_plugin_load() {
         # load completion for Homebrew
         if type brew &>/dev/null; then
             local brewprefix=$(brew --prefix)
-            bash_completions+=(
-                "$brewprefix"/etc/bash_completion
-                "$brewprefix"/share/bash-completion/bash_completion
-            )
+            bash_completions+=("$brewprefix"/etc/bash_completion)
+            [ $bmajor -lt 4 ] || bash_completions+=("$brewprefix"/share/bash-completion/bash_completion)
             bash_completions_more+=(
                 $(brew --repository)/Library/Contributions/brew_bash_completion.sh
             )
