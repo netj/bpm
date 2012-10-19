@@ -163,7 +163,7 @@ bash_plugin_login() {
         
         getkey
         # new session should be started if there are no sessions yet
-        [ -n "$key" ] || tmux list-sessions &>/dev/null || key=n
+        [ -n "$key" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
         # take action depending on user input
         case $key in
             [nN]) # start a new one per request
