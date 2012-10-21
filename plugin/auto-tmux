@@ -153,42 +153,44 @@ bash_plugin_login() {
         local key=
         getkey() {
             key=
+            local prompt=$1 defaultkey=$2
             local intr=false
             trap "intr=true" INT
-            read -n 1 -t 1 -s key
+            read -p "$prompt" -n 1 -t 1 -s key
+            echo
             key=${key#[ 	]}
+            [ -n "$key" ] || key=$defaultkey
             trap - INT
             ! $intr || key=q
         }
         
-        getkey
+        # ask what to do
+        getkey "auto-tmux: entering.. [R]esume | [n]ew | [s*]hell? " r
         # new session should be started if there are no sessions yet
-        [ -n "$key" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
+        [ x"$key" != x"r" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
         # take action depending on user input
-        case $key in
-            [nN]) # start a new one per request
-                echo "auto-tmux: starting new session"
-                tmux -2 new-session
-                ;;
-            "") # otherwise, default is to resume
-                echo "auto-tmux: resuming previous session"
-                tmux -2 attach-session
-                ;;
-            *) # if any other key was pressed, abort
-                echo "auto-tmux: aborted"
-                return
-                ;;
-        esac
-        
-        # after tmux session, give a chance to visit the shell
-        getkey
-        if [ -n "$key" ]; then
-            echo "auto-tmux: finished"
-            return
-        fi
-        
-        # exit the shell
-        exit
+        while true; do
+            case $key in
+                [nN]) # start a new one per request
+                    echo "auto-tmux: starting new session"
+                    tmux -2 new-session
+                    ;;
+                [rR]) # otherwise, default is to resume
+                    echo "auto-tmux: resuming previous session"
+                    tmux -2 attach-session
+                    ;;
+                [xX])
+                    # exit the shell
+                    exit
+                    ;;
+                [qQsS]|*) # if any other key was pressed, abort
+                    echo "auto-tmux: aborted.  Use \`atmux' to come back."
+                    return
+                    ;;
+            esac
+            # after a tmux session ends, give a chance to visit the shell
+            getkey "auto-tmux: e[X]iting.. [r]esume | [n]ew | [s*]hell? " x
+        done
     fi
 }
 
