@@ -121,8 +121,18 @@ bash_plugin_login() {
     bash_default_alias mv "mv -i"
     bash_default_alias rm "rm -i"
     bash_default_alias .. "cd .."
+    -() { cd -; }
     # keep history clean
-    HISTIGNORE="&:l[salt]:lal:llt:lalt:[bf]g:cd:.."
+    bash_add_with_separator : HISTIGNORE \
+        "&" "[bf]g" cd .. - \
+        "l[salt]" lal llt lalt \
+        #
+    # ignore some annoying files when completing
+    bash_add_with_separator : FIGNORE \
+        .o "~" \
+        .svn .git \
+        .DS_Store \
+        #
 }
 
 # vim:et:ts=8:sw=4:sts=4

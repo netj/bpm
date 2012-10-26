@@ -6,77 +6,91 @@
 ################################################################################
 
 bash_plugin_load() {
-# bash_remove_path will remove all the paths in the variable separated by :
-#  Usage: bash_remove_path PATH /usr/local/bin
-bash_remove_path() {
-    local v=$1; shift
-    local p=
-    for p in "$@"; do
-        if [[ "${!v}" =~ :$p:|^$p(:|$)|:$p$ ]]; then
-            export $v=${!v//:$p:/:}
-            export $v=${!v#$p:}
-            export $v=${!v%:$p}
-        fi
-    done
-}
-# bash_add_path will put given paths at the end of the variable avoiding duplicates
-#  Usage: bash_add_path PATH /usr/local/bin
-bash_add_path() {
-    local v=$1; shift
-    bash_remove_path "$v" "$@"
-    local p=
-    for p in "$@"; do
-        [[ -d "$p" ]] || continue
-        if [[ -n "${!v}" ]]; then
-            export $v="${!v}:$p"
+
+# bash_add_with_separator will insert all given strings with separator to the variable
+#  Usage: bash_add_with_separator : FIGNORE .o .svn
+bash_add_with_separator() {
+    local sep=$1; shift
+    local name=$1; shift
+    local val=
+    for val in "$@"; do
+        if [[ -n "${!name}" ]]; then
+            ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
+            declare -g $name="${!name}$sep$val"
         else
-            export $v="$p"
+            declare -g $name="$val"
         fi
     done
 }
-# bash_add_path_if_not will avoid duplicate paths ending up in the variable
+
+# bash_insert_with_separator will insert all given strings with separator to the variable
+#  Usage: bash_insert_with_separator : FIGNORE .o .svn
+bash_insert_with_separator() {
+    local sep=$1; shift
+    local name=$1; shift
+    local val=
+    for val in "$@"; do
+        if [[ -n "${!name}" ]]; then
+            ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
+            declare -g $name="$val$sep${!name}"
+        else
+            declare -g $name="$val"
+        fi
+    done
+}
+
+# bash_remove_with_separator will remove all given strings with separator from the variable
+#  Usage: bash_remove_with_separator : FIGNORE .o .svn
+bash_remove_with_separator() {
+    local sep=$1; shift
+    local name=$1; shift
+    local val=
+    for val in "$@"; do
+        if [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]]; then
+            declare -g $name=${!name//$sep$val$sep/$sep}
+            declare -g $name=${!name#$val$sep}
+            declare -g $name=${!name%$sep$val}
+        fi
+    done
+}
+
+# bash_only_with_existent_paths will run given command (up to -- arg) with the existing paths given after -- arg
+#  Usage: bash_only_with_existent_paths bash_insert_path -- /usr/local/bin
+bash_only_with_existent_paths() {
+    local c=$1; shift
+    local p= as= ps=
+    as=(); for p in "$@"; do [[ $p != "--" ]] || break; as+=("$p"); shift; done
+    shift
+    ps=(); for p in "$@"; do [[ -e "$p" ]] || continue; ps+=("$p"); done
+    "$c" "${as[@]}" "${ps[@]}"
+}
+
+# bash_remove_path will remove all the paths in the variable
+#  Usage: bash_remove_path PATH /usr/local/bin
+bash_remove_path() { bash_remove_with_separator : "$@"; }
+
+# bash_add_path_if_not will only add paths not present in the variable
 #  Usage: bash_add_path_if_not PATH /usr/local/bin
 bash_add_path_if_not() {
-    local v=$1; shift
-    local p=
-    for p in "$@"; do
-        [[ -d "$p" ]] || continue
-        if [[ -n "${!v}" ]]; then
-            ! [[ "${!v}" =~ :$p:|^$p(:|$)|:$p$ ]] || continue
-            export $v="${!v}:$p"
-        else
-            export $v="$p"
-        fi
-    done
+    local name=$1; shift
+    bash_only_with_existent_paths \
+    bash_add_with_separator : "$name" -- "$@"
 }
-# bash_insert_path will put given paths at the beginning of the variable avoiding duplicates
-#  Usage: bash_insert_path PATH /usr/local/bin
-bash_insert_path() {
-    local v=$1; shift
-    bash_remove_path "$v" "$@"
-    local p=
-    for p in "$@"; do
-        [[ -d "$p" ]] || continue
-        if [[ -n "${!v}" ]]; then
-            export $v="$p:${!v}"
-        else
-            export $v="$p"
-        fi
-    done
-}
-# bash_insert_path_if_not will avoid duplicate paths ending up in the variable
+
+# bash_add_path will put given paths at the end of the variable
+#  Usage: bash_add_path PATH /usr/local/bin
+bash_add_path() { bash_remove_path "$@"; bash_add_path_if_not "$@"; }
+
+# bash_insert_path_if_not will only insert paths not present in the variable
 #  Usage: bash_insert_path_if_not PATH /usr/local/bin
 bash_insert_path_if_not() {
-    local v=$1; shift
-    local p=
-    for p in "$@"; do
-        [[ -d "$p" ]] || continue
-        if [[ -n "${!v}" ]]; then
-            ! [[ "${!v}" =~ :$p:|^$p(:|$)|:$p$ ]] || continue
-            export $v="$p:${!v}"
-        else
-            export $v="$p"
-        fi
-    done
+    local name=$1; shift
+    bash_only_with_existent_paths \
+    bash_insert_with_separator : "$name" -- "$@"
 }
+
+# bash_insert_path will put given paths at the beginning of the variable avoiding duplicates separated by :
+#  Usage: bash_insert_path PATH /usr/local/bin
+bash_insert_path() { bash_remove_path "$@"; bash_insert_path_if_not "$@"; }
+
 }
