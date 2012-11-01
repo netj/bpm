@@ -12,13 +12,14 @@ bash_plugin_load() {
 bash_add_with_separator() {
     local sep=$1; shift
     local name=$1; shift
+    local flg=; [[ $(declare -p $name 2>/dev/null) =~ ^declare\ -x ]] || flg=-n
     local val=
     for val in "$@"; do
         if [[ -n "${!name}" ]]; then
             ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
-            declare -g $name="${!name}$sep$val"
+            export $flg $name="${!name}$sep$val"
         else
-            declare -g $name="$val"
+            export $flg $name=$val
         fi
     done
 }
@@ -28,13 +29,14 @@ bash_add_with_separator() {
 bash_insert_with_separator() {
     local sep=$1; shift
     local name=$1; shift
+    local flg=; [[ $(declare -p $name 2>/dev/null) =~ ^declare\ -x ]] || flg=-n
     local val=
     for val in "$@"; do
         if [[ -n "${!name}" ]]; then
             ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
-            declare -g $name="$val$sep${!name}"
+            export $flg $name="$val$sep${!name}"
         else
-            declare -g $name="$val"
+            export $flg $name=$val
         fi
     done
 }
@@ -44,12 +46,13 @@ bash_insert_with_separator() {
 bash_remove_with_separator() {
     local sep=$1; shift
     local name=$1; shift
+    local flg=; [[ $(declare -p $name 2>/dev/null) =~ ^declare\ -x ]] || flg=-n
     local val=
     for val in "$@"; do
         if [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]]; then
-            declare -g $name=${!name//$sep$val$sep/$sep}
-            declare -g $name=${!name#$val$sep}
-            declare -g $name=${!name%$sep$val}
+            export $flg $name=${!name//$sep$val$sep/$sep}
+            export $flg $name=${!name#$val$sep}
+            export $flg $name=${!name%$sep$val}
         fi
     done
 }
