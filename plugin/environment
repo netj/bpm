@@ -38,6 +38,7 @@ bash_plugin_load() {
                 # prefer GNU coreutils to BSD ones
                 if local coreutils_Cellar=$(brew --prefix coreutils 2>/dev/null); then
                     bash_insert_path PATH "$coreutils_Cellar/libexec/gnubin"
+                    bash_insert_path MANPATH "$coreutils_Cellar/libexec/gnuman"
                 fi
             elif [ -x /opt/local/bin/port ]; then
                 # Paths for MacPorts (http://www.macports.org/)
