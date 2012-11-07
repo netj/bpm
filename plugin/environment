@@ -122,7 +122,7 @@ bash_plugin_login() {
     bash_default_alias mv "mv -i"
     bash_default_alias rm "rm -i"
     bash_default_alias .. "cd .."
-    -() { cd -; }
+    bash_default_alias -  "cd -"
     # keep history clean
     bash_add_with_separator : HISTIGNORE \
         "&" "[bf]g" cd .. - \

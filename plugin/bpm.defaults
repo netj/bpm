@@ -10,19 +10,18 @@ bash_plugin_load() {
 bash_default() {
     local name=$1
     local value=$2
-    if [ -n "${!name}" ]; then
+    if declare -p "$name" &>/dev/null; then
         false
     else
-        eval "$name='${value//\'/\'\\\'\'}'"
-        true
+        export -n "$name=$value"
     fi
 }
 bash_default_env() {
     bash_default "$@"
-    export $1
+    export -- "$1"
 }
 bash_default_alias() {
-    alias "$1" 2>/dev/null >&2 || alias "$1"="$2"
+    alias -- "$1" 2>/dev/null >&2 || alias -- "$1=$2"
 }
 
 }
