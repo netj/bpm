@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# TeX goodies
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+# Requires: bpm.defaults
+################################################################################
+
+bash_plugin_login() {
+    # latexmk is really nice for compiling tex, a reasonable default will make it better
+    latexmk() {
+        # look for *.latexmain file if no argument was given
+        if [[ $# == 0 ]]; then
+            local main
+            main=(*.latexmain)
+            main=${main[0]%.latexmain}
+            ! [ -e "$main" ] || set -- "$main"
+        fi
+        # default options for latexmk
+        if [[ ${1:-} != -* ]]; then
+            set -- -pvc -pdf -latexoption=-synctex=1 "$@"
+            echo >&2 "+ latexmk $*"
+        fi
+        command latexmk "$@"
+    }
+}
