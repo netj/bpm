@@ -100,7 +100,7 @@ bpm() {
         else
             info "computing dependencies..." >&2
             # analyze the "# Requires: " lines to order by dependencies
-            tmp=`mktemp -d ../enabled.deps.XXXXXX`
+            tmp=$(mktemp -d ${TMPDIR:-/tmp}/enabled.deps.XXXXXX)
             trap "rm -rf $tmp" EXIT
             \ls | tee $tmp/more >$tmp/seen
             while [ -s $tmp/more ]; do

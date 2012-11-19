@@ -60,7 +60,7 @@ bash_plugin_login() {
         if [[ $# -eq 0 ]]; then command env | sort --ignore-case; else command env "$@"; fi
     }
     eenv() { # change env with editor
-        local t=$(mktemp -d /tmp/eenv.XXXXXX)
+        local t=$(mktemp -d ${TMPDIR:-/tmp}/eenv.XXXXXX)
         # snapshot the environment
         if [[ $# -gt 0 ]]; then
             local patt=$(printf '\|^[^=]*%q[^=]*=' "$@")

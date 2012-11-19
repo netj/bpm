@@ -15,7 +15,7 @@ bash_plugin_load() {
         fi
         (
         set -e
-        local tmp=`mktemp -d /tmp/bash.abst.XXXXXX`
+        local tmp=`mktemp -d ${TMPDIR:-/tmp}/bash.abst.XXXXXX`
         cleanup() { r=$?; rm -rf $tmp; exit $r; }
         trap cleanup EXIT ERR INT HUP TERM
         local id= idf=
