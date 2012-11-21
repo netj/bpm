@@ -3,7 +3,7 @@
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-12-16
-# Requires: bpm.defaults bpm.exit-hooks
+# Requires: bpm.defaults bpm.exit-hooks environment
 # Conflicts: screen
 ################################################################################
 
