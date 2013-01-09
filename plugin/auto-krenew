@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# auto-krenew -- Automatic krenew support to care less about
+#                expiring Kerberos tickets and AFS tokens
+# 
+# See-Also: http://www.eyrie.org/~eagle/software/kstart/readme.html
+# See-Also: https://itservices.stanford.edu/service/afs/learningmore/tokens
+#
+# Requires: bpm.path-manipulation
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-08
+
+bash_plugin_login() {
+    if type krenew &>/dev/null && [ -t 0 -a -t 1 ]; then
+        _auto_krenew_dir="${TMPDIR:-/tmp}/auto-krenew.$USER"
+        _auto_krenew_pidfile="$_auto_krenew_dir"/krenew.pid
+        export KRB5CCNAME="$_auto_krenew_dir"/krb5cc
+        akrenew-start() {
+            mkdir -p "$_auto_krenew_dir"; chmod go= "$_auto_krenew_dir"
+            if ! klist -5s; then
+                echo 'auto-krenew: Running kinit for renewable tickets...'
+                kinit
+            fi
+            if ! ps -p "$(cat "$_auto_krenew_pidfile" 2>/dev/null)" &>/dev/null; then
+                echo 'auto-krenew: Launching in background...'
+                krenew -K 60 -b -t -p "$_auto_krenew_pidfile"
+            fi
+            [ -n "$TMUX" ] || tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
+        }
+        akrenew-cleanup() {
+            [ -d "$_auto_krenew_dir" ]
+            local pid=$(cat "$_auto_krenew_pidfile" 2>/dev/null)
+            [ -z "$pid" ] || kill -TERM $pid
+            rm -rf "$_auto_krenew_dir"
+        }
+        akrenew-restart() {
+            akrenew-cleanup
+            akrenew-start
+        }
+        [ -n "$TMUX" ] || akrenew-start
+        aklog
+    fi
+}
+

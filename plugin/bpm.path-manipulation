@@ -7,6 +7,14 @@
 
 bash_plugin_load() {
 
+# bash_escape will escape all the arguments so it can be used as a flat string,
+#  e.g., sh -c "foo; bar $(bash_escape "$@")"
+bash_escape() {
+    local s= a=
+    for a; do s+=" '"${a//"'"/"'\\''"}"'"; done
+    echo "${s# }"
+}
+
 # bash_add_with_separator will insert all given strings with separator to the variable
 #  Usage: bash_add_with_separator : FIGNORE .o .svn
 bash_add_with_separator() {
