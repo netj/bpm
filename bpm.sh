@@ -50,8 +50,8 @@ bpm() {
     bpm_is() {
         local t=$1; shift
         local p=$1; shift
-        local negative_msg=$1; shift
-        local positive_msg=$1; shift
+        local negative_msg=${1:-}
+        local positive_msg=${2:-}
         if [ -e "$BPM_HOME"/$t/"$p" -o -L "$BPM_HOME"/$t/"$p" ]; then
             [ -z "$positive_msg" ] || error "$p: $positive_msg"
         else
