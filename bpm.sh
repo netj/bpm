@@ -21,7 +21,7 @@
 
 BPM=${BASH_SOURCE:-$0}
 BPM_HOME=$(cd $(dirname "$BPM") &>/dev/null; pwd)
-BPM_TMPDIR=${BPM_TMPDIR:-$(d="${TMPDIR:-/tmp}/bpm-$USER"; mkdir -p "$d"; echo "$d")}
+BPM_TMPDIR=${BPM_TMPDIR:-$(d="${TMPDIR:-/tmp}/bpm-$USER"; mkdir -p "$d"; chmod go= "$d"; echo "$d")}
 bpm() {
     local Cmd=$1; shift
     local exitcode=0
@@ -123,6 +123,7 @@ bpm() {
             done | tsort | grep -v '^*$' |
             tee "$deps"
         fi
+        chmod go= "$deps"
         )
     }
 
@@ -200,7 +201,7 @@ __bpmcomp() {
                 COMPREPLY=($(compgen -W "$(bpm find)" -- "$cur"))
                 ;;
             enable|on)
-                [ "$BPM_TMPDIR"/enabled.all -nt "$BPM_TMPDIR"/enabled.deps ] || sort "$BPM_TMPDIR"/enabled.deps >"$BPM_TMPDIR"/enabled.all
+                [ "$BPM_TMPDIR"/enabled.all -nt "$BPM_TMPDIR"/enabled.deps ] || { sort "$BPM_TMPDIR"/enabled.deps >"$BPM_TMPDIR"/enabled.all; chmod go= "$BPM_TMPDIR"/enabled.all; }
                 COMPREPLY=($(compgen -W "$(bpm find | comm -23 - "$BPM_TMPDIR"/enabled.all)" -- "$cur"))
                 ;;
             ls|disable|off)
