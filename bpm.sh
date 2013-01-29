@@ -21,6 +21,7 @@
 
 BPM=${BASH_SOURCE:-$0}
 BPM_HOME=$(cd $(dirname "$BPM") &>/dev/null; pwd)
+BPM_TMPDIR=${BPM_TMPDIR:-$(d="${TMPDIR:-/tmp}/bpm-$USER"; mkdir -p "$d"; echo "$d")}
 bpm() {
     local Cmd=$1; shift
     local exitcode=0
@@ -38,12 +39,11 @@ bpm() {
 
     bpm_list() {
         local where=$1; shift
-        # TODO
         (
         mkdir -p "$BPM_HOME"/"$where"
         cd "$BPM_HOME"/"$where" &>/dev/null
         [ $# -gt 0 ] || set -- *
-        eval \\ls "$@" 2>/dev/null
+        eval command ls "$@" 2>/dev/null
         )
     }
 
@@ -93,34 +93,35 @@ bpm() {
     bpm_list_enabled_by_deps() {
         (
         cd "$BPM_HOME"/enabled &>/dev/null
-        local latest=$(\ls -tdL . * | head -n 1)
+        local latest=$(command ls -tdL . * | head -n 1)
         # echo $latest >&2
-        if [ ../enabled.deps -nt $latest ]; then
-            cat ../enabled.deps
+        deps="$BPM_TMPDIR"/enabled.deps
+        if [ "$deps" -nt $latest ]; then
+            cat "$deps"
         else
             info "computing dependencies..." >&2
             # analyze the "# Requires: " lines to order by dependencies
-            tmp=$(mktemp -d ${TMPDIR:-/tmp}/enabled.deps.XXXXXX)
-            trap "rm -rf $tmp" EXIT
-            \ls | tee $tmp/more >$tmp/seen
-            while [ -s $tmp/more ]; do
-                # cat $tmp/more >&2; echo >&2
-                local ps=$(cat $tmp/more; : >$tmp/more)
+            tmp=$(mktemp -d "$BPM_TMPDIR"/enabled.deps.XXXXXX)
+            trap 'rm -rf "$tmp"' EXIT
+            command ls | tee "$tmp"/more >"$tmp"/seen
+            while [ -s "$tmp"/more ]; do
+                # cat "$tmp"/more >&2; echo >&2
+                local ps=$(cat "$tmp"/more; : >"$tmp"/more)
                 for p in $ps; do
                     local pf="$BPM_HOME"/plugin/"$p"
                     [ -e "$pf" ] || { error "$p: Dangling plugin enabled"; continue; }
                     for dep in $(sed -n '/^# Requires: / s/^# Requires: *//p' <"$pf"); do
-                        if ! grep -q "$(printf '^%q$' "$dep")" $tmp/seen; then
+                        if ! grep -q "$(printf '^%q$' "$dep")" "$tmp"/seen; then
                             bpm_is plugin "$dep" "Unknown plug-in required by $p" || continue
-                            echo "$dep" >>$tmp/more
-                            echo "$dep" >>$tmp/seen
+                            echo "$dep" >>"$tmp"/more
+                            echo "$dep" >>"$tmp"/seen
                         fi
                         echo "$dep $p"
                     done
                     echo "$p" '*'
                 done
             done | tsort | grep -v '^*$' |
-            tee ../enabled.deps
+            tee "$deps"
         fi
         )
     }
@@ -199,8 +200,8 @@ __bpmcomp() {
                 COMPREPLY=($(compgen -W "$(bpm find)" -- "$cur"))
                 ;;
             enable|on)
-                [ "$BPM_HOME"/enabled.all -nt "$BPM_HOME"/enabled.deps ] || sort "$BPM_HOME"/enabled.deps >"$BPM_HOME"/enabled.all
-                COMPREPLY=($(compgen -W "$(bpm find | comm -23 - "$BPM_HOME"/enabled.all)" -- "$cur"))
+                [ "$BPM_TMPDIR"/enabled.all -nt "$BPM_TMPDIR"/enabled.deps ] || sort "$BPM_TMPDIR"/enabled.deps >"$BPM_TMPDIR"/enabled.all
+                COMPREPLY=($(compgen -W "$(bpm find | comm -23 - "$BPM_TMPDIR"/enabled.all)" -- "$cur"))
                 ;;
             ls|disable|off)
                 COMPREPLY=($(compgen -W "$(bpm ls)" -- "$cur"))
