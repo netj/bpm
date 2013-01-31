@@ -134,6 +134,18 @@ bash_plugin_login() {
         .svn .git \
         .DS_Store \
         #
+    # pstree is too long to type, make a smart alias
+    if type pstree &>/dev/null && ! type pst &>/dev/null; then
+        pst() {
+            case "${1:-}" in
+                -*)                    ;;
+                [0-9]*) set -- -p "$@" ;;
+                "")     set -- -p $$   ;;
+                *)      set -- -s "$@" ;;
+            esac
+            pstree "$@"
+        }
+    fi
 }
 
 # vim:et:ts=8:sw=4:sts=4
