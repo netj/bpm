@@ -91,7 +91,16 @@ bash_plugin_login() {
         rm -rf $t
     }
     # some usability options
-    shopt -s nocaseglob cdspell cmdhist
+    # See-Also: http://wiki.bash-hackers.org/internals/shell_options
+    shopt -s nocaseglob extglob \
+             cdspell \
+             cmdhist histappend histreedit lithist \
+             #
+    if ! [[ $BASH_VERSION < 4 ]]; then
+        shopt -s globstar autocd checkjobs
+    else
+        bash_default_alias .. "cd .."
+    fi
     local uname=`uname`
     # ls on several platforms
     local ls_o=
@@ -121,7 +130,6 @@ bash_plugin_login() {
     bash_default_alias cp "cp -i"
     bash_default_alias mv "mv -i"
     bash_default_alias rm "rm -i"
-    bash_default_alias .. "cd .."
     bash_default_alias -  "cd -"
     # keep history clean
     bash_add_with_separator : HISTIGNORE \
