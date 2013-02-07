@@ -112,7 +112,7 @@ bash_plugin_load() {
             prompt_pwd=$PWD
             prompt_jobs=$nrjobs
             # hostname seldomly changes
-            HOSTNAME=`hostname -f`
+            HOSTNAME=`hostname -f 2>/dev/null || hostname`
             prompt_host=${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}
             local pwd=${PWD/#$HOME/\~}
             local changing="$prompt_host$pwd$nrjobs"
