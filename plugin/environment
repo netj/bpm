@@ -98,6 +98,10 @@ bash_plugin_login() {
              #
     if ! [[ $BASH_VERSION < 4 ]]; then
         shopt -s globstar autocd checkjobs
+        # Use menu-complete-backward (only in bash >= 4)
+        # if Shift-TAB is already bound to something similar
+        ! bind -s | grep -q -F '"\e[Z": "\e-1\C-i"' ||
+            bind '"\e[Z": menu-complete-backward'
     else
         bash_default_alias .. "cd .."
     fi
