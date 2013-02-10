@@ -24,7 +24,6 @@ bash_plugin_login() {
                 echo 'auto-krenew: Launching in background...'
                 krenew -K 60 -b -t -p "$_auto_krenew_pidfile"
             fi
-            [ -n "$TMUX" ] || tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         }
         akrenew-cleanup() {
             [ -d "$_auto_krenew_dir" ]
@@ -36,7 +35,7 @@ bash_plugin_login() {
             akrenew-cleanup
             akrenew-start
         }
-        [ -n "$TMUX" ] || akrenew-start
+        [ -n "${TMUX:-}" ] || akrenew-start
         aklog
     fi
 }

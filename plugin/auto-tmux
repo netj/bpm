@@ -23,6 +23,7 @@ bash_plugin_login() {
         local n=
         for n in SSH_CLIENT SSH_CONNECTION SSH_TTY \
             SSH_AUTH_SOCK SSH_AGENT_PID \
+            KRB5CCNAME \
             XAUTHORITY DISPLAY SESSION_MANAGER
         do  local v=${!n}
             if [ -n "$v" ]; then
@@ -49,7 +50,7 @@ bash_plugin_login() {
         auto_tmux_link="$auto_tmux_env_root/.$$"
         unset TERM_PROGRAM TERM_PROGRAM_VERSION
         unset atmux
-
+        
         # set useful tmux related commands
         -atmux-all() {
             # all connections
@@ -163,6 +164,12 @@ bash_plugin_login() {
             trap - INT
             ! $intr || key=q
         }
+        
+        # if it seems we're relying on Kerberos+AFS, put tmux in its own PAG
+        # with a fresh AFS token to cope with file access problems in the
+        # resumed tmux sessions.
+        [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null ||
+            tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         
         # ask what to do
         getkey "auto-tmux: entering.. [R]esume | [n]ew | [s*]hell? " r
