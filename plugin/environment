@@ -40,6 +40,11 @@ bash_plugin_load() {
                     bash_insert_path PATH "$coreutils_Cellar/libexec/gnubin"
                     bash_insert_path MANPATH "$coreutils_Cellar/libexec/gnuman"
                 fi
+                # Use autojump if available
+                if [[ -s "$brewPrefix"/etc/autojump.sh ]]; then
+                    . "$brewPrefix"/etc/autojump.sh
+                    PROMPT_COMMAND+=";" # XXX workaround
+                fi
             elif [ -x /opt/local/bin/port ]; then
                 # Paths for MacPorts (http://www.macports.org/)
                 bash_insert_path PATH /opt/local/sbin /opt/local/libexec/gnubin /opt/local/bin
