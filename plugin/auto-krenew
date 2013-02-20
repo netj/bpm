@@ -13,30 +13,73 @@ bash_plugin_login() {
     if type krenew &>/dev/null && [ -t 0 -a -t 1 ]; then
         _auto_krenew_dir="${TMPDIR:-/tmp}/auto-krenew.$USER"
         _auto_krenew_pidfile="$_auto_krenew_dir"/krenew.pid
-        export KRB5CCNAME="$_auto_krenew_dir"/krb5cc
+        _auto_krenew_initialized=false
+        -akrenew-pid() {
+            [ -d "$_auto_krenew_dir" ]
+            local pid=$(cat "$_auto_krenew_pidfile" 2>/dev/null)
+            [ -n "$pid" ] && ps -p $pid &>/dev/null && echo $pid
+        }
+        -akrenew-is-ticket-valid() { klist -5s; }
+        -akrenew-check() {
+            -akrenew-is-ticket-valid ||
+                echo >&2 'auto-krenew: Kerberos ticket expired; to renew: akrenew-restart'
+        }
         akrenew-start() {
+            export KRB5CCNAME="$_auto_krenew_dir"/krb5cc
             mkdir -p "$_auto_krenew_dir"; chmod go= "$_auto_krenew_dir"
-            if ! klist -5s; then
-                echo 'auto-krenew: Running kinit for renewable tickets...'
+            if ! -akrenew-is-ticket-valid &&
+                { [ -z "$TMUX" ] || $_auto_krenew_initialized; }; then # do not kinit while starting new tmux windows/panes
+                echo 'auto-krenew: running kinit for renewable tickets...'
                 kinit
+                aklog
             fi
-            if ! ps -p "$(cat "$_auto_krenew_pidfile" 2>/dev/null)" &>/dev/null; then
-                echo 'auto-krenew: Launching in background...'
+            if ! -akrenew-pid >/dev/null; then
+                echo 'auto-krenew: launching krenew in background...'
                 krenew -K 60 -b -t -p "$_auto_krenew_pidfile"
             fi
         }
-        akrenew-cleanup() {
-            [ -d "$_auto_krenew_dir" ]
-            local pid=$(cat "$_auto_krenew_pidfile" 2>/dev/null)
-            [ -z "$pid" ] || kill -TERM $pid
+        akrenew-stop() {
+            pid=$(-akrenew-pid) && kill -TERM $pid || true
             rm -rf "$_auto_krenew_dir"
         }
         akrenew-restart() {
-            akrenew-cleanup
+            akrenew-stop
             akrenew-start
         }
-        [ -n "${TMUX:-}" ] || akrenew-start
-        aklog
+        # initialize
+        confirmed() {
+            local r=
+            while true; do
+                read -p'auto-krenew: [k]eep your AFS tokens refreshed automatically, or [N]ot? ' \
+                     -n 1 -s -t 1 r || r=
+                [ x"$r" = x"$'\n'" ] || echo
+                case $r in
+                    [kK]) # accepted
+                        return 0 ;;
+                    ""|[nNqQ]) # canceled
+                        echo "auto-krenew: to start it later: akrenew-start"
+                        return 1 ;;
+                    *) # retry
+                        ;;
+                esac
+            done
+        }
+        local pid= start_akrenew=false
+        if [ -z "$KRB5CCNAME" ] || pid=$(-akrenew-pid); then
+            # detect if krenew is already running
+            echo "auto-krenew: using krenew PID $pid"
+            export KRB5CCNAME="$_auto_krenew_dir"/krb5cc
+            start_akrenew=true
+        elif [ -z "$TMUX" ] && confirmed; then
+            # or when user confirms to do so, but don't ask inside tmux
+            start_akrenew=true
+        fi
+        if $start_akrenew; then
+            akrenew-start
+            bash_add_prompt -akrenew-check
+        fi
+        _auto_krenew_initialized=true
+        unset confirmed
     fi
 }
 
