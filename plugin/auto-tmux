@@ -10,7 +10,7 @@
 bash_plugin_login() {
     bash_default auto_tmux_env_root /tmp/auto-tmux.${SUDO_USER:-$LOGNAME}
     # a shorthand for enabling auto-tmux
-    atmux() { auto_tmux_enable=true exec bash -l; }
+    atmux() { auto_tmux_enable=true bash -l; }
     # load values from tmux environment snapshot
     atmux-reset() {
         [ -f "$auto_tmux_link" ] || return
