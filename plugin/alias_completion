@@ -56,7 +56,7 @@ bash_plugin_load() {
             local expanded_COMP_LINE=\${COMP_WORDS[*]}
             let COMP_POINT+=\${#expanded_COMP_LINE}-\${#COMP_LINE}
             COMP_LINE=\$expanded_COMP_LINE
-            $completion_function
+            $completion_function \"\$@\"
         }
         "
 
