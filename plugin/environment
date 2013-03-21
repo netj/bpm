@@ -62,7 +62,7 @@ bash_plugin_login() {
     bash_default_env PAGER less
     bash_default_env LESS "-XFRiMW" # --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --ignore-case --LONG-PROMPT --HILITE_UNREAD
     env() { # sorted env
-        if [[ $# -eq 0 ]]; then command env | sort --ignore-case; else command env "$@"; fi
+        if [[ $# -eq 0 ]]; then command env | LC_ALL=C sort --ignore-case; else command env "$@"; fi
     }
     eenv() { # change env with editor
         local t=$(mktemp -d ${TMPDIR:-/tmp}/eenv.XXXXXX)
@@ -73,7 +73,7 @@ bash_plugin_login() {
         else
             env
         fi | grep -v '^_=' >$t/env
-        eenv_varnames() { sed 's/=.*//' | sort; }
+        eenv_varnames() { sed 's/=.*//' | LC_ALL=C sort; }
         eenv_varnames <$t/env >$t/vars.old
         # open editor for it
         ${EDITOR:-vim} $t/env
@@ -86,7 +86,7 @@ bash_plugin_login() {
         done <$t/env
         # take care of variable removals
         eenv_varnames <$t/env >$t/vars.new
-        comm -13 $t/vars.new $t/vars.old >$t/vars.unset
+        LC_ALL=C comm -13 $t/vars.new $t/vars.old >$t/vars.unset
         while read -r name; do
             unset "$name"
             echo "unset $name"
