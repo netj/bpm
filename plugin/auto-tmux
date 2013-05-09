@@ -3,7 +3,7 @@
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-12-16
-# Requires: bpm.defaults bpm.exit-hooks environment
+# Requires: bpm.defaults bpm.exit-hooks bpm.interactive environment
 # Conflicts: screen
 ################################################################################
 
@@ -151,23 +151,6 @@ bash_plugin_login() {
         bash_add_unloader "rm -f \"$auto_tmux_env\""
         
         echo "auto-tmux: connection #$conn"
-        # TODO make this more generic (with the while loop below) and turn into "bash_getkey" in bpm.defaults
-        local key=
-        getkey() {
-            key=
-            local prompt=$1 defaultkey=$2 defaultkeyUpperCase=${3:-$(tr a-z A-Z <<<"$2")}
-            prompt=${prompt//[\[]/$'\e[33m'[} # yellow
-            prompt=${prompt//[\[][$defaultkey]/$'\e[32;1m'[$defaultkeyUpperCase} # green, uppercase
-            prompt=${prompt//[\]]/]$'\e[0m'}
-            local intr=false
-            trap "intr=true" INT
-            read -p "$prompt" -n 1 -t 1 -s key
-            echo
-            key=${key#[ 	]}
-            [ -n "$key" ] || key=$defaultkey
-            trap - INT
-            ! $intr || key=q
-        }
         
         # if it seems we're relying on Kerberos+AFS, put tmux in its own PAG
         # with a fresh AFS token to cope with file access problems in the
@@ -176,7 +159,8 @@ bash_plugin_login() {
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         
         # ask what to do
-        getkey "auto-tmux: entering.. [r]esume | [n]ew | [s*]hell? " r R
+        local key=
+        bash_getkey key "auto-tmux: entering.. [r]esume | [n]ew | [s*]hell? " 1 r
         # new session should be started if there are no sessions yet
         [ x"$key" != x"r" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
         # take action depending on user input
@@ -200,7 +184,7 @@ bash_plugin_login() {
                     ;;
             esac
             # after a tmux session ends, give a chance to visit the shell
-            getkey "auto-tmux: e[x]iting.. [r]esume | [n]ew | [s*]hell? " x X
+            bash_getkey key "auto-tmux: e[x]iting.. [r]esume | [n]ew | [s*]hell? " 1 x
         done
     fi
 }

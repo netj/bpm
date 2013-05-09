@@ -5,7 +5,7 @@
 # See-Also: http://www.eyrie.org/~eagle/software/kstart/readme.html
 # See-Also: https://itservices.stanford.edu/service/afs/learningmore/tokens
 #
-# Requires: bpm.path-manipulation
+# Requires: bpm.path-manipulation bpm.interactive
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-08
 
@@ -49,20 +49,14 @@ bash_plugin_login() {
         # initialize
         confirmed() {
             local r=
-            while true; do
-                read -p'auto-krenew: [k]eep your AFS tokens refreshed automatically, or [N]ot? ' \
-                     -n 1 -s -t 1 r || r=
-                [ x"$r" = x"$'\n'" ] || echo
-                case $r in
-                    [kK]) # accepted
-                        return 0 ;;
-                    ""|[nNqQ]) # canceled
-                        echo "auto-krenew: to start it later: akrenew-start"
-                        return 1 ;;
-                    *) # retry
-                        ;;
-                esac
-            done
+            bash_getkey r 'auto-krenew: [k]eep your AFS tokens refreshed automatically, or [n]ot? ' 1 n
+            case $r in
+                [kK]) # accepted
+                    return 0 ;;
+                ""|[nNqQ]) # canceled
+                    echo "auto-krenew: to start it later: akrenew-start"
+                    return 1 ;;
+            esac
         }
         local pid= start_akrenew=false
         if [ -z "$KRB5CCNAME" ] || pid=$(-akrenew-pid); then
