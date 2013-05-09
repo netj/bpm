@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 # Automatic tmux session support
 # 
+# This plugin automatically adjusts the environment variables and Kerberos+AFS
+# tokens of the shells running inside tmux sessions with the ones from the ssh
+# connection or the shell that reattaches to tmux.
+# 
+# If you don't want to automatically attach to tmux on every login, but
+# explicitly do so with the `atmux' command, then add the following line to
+# your ~/.bash_local file:
+# 
+#     auto_tmux_attach_at_login=false
+# 
+#
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-12-16
 # Requires: bpm.defaults bpm.exit-hooks bpm.interactive environment
@@ -9,8 +20,10 @@
 
 bash_plugin_login() {
     bash_default auto_tmux_env_root /tmp/auto-tmux.${SUDO_USER:-$LOGNAME}
+    # decide default behavior (to resume or just enter the shell)
+    local default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
     # a shorthand for enabling auto-tmux
-    atmux() { auto_tmux_enable=true bash -l; }
+    atmux() { auto_tmux_attach_at_login=true bash -l; }
     # load values from tmux environment snapshot
     atmux-reset() {
         [ -f "$auto_tmux_link" ] || return
@@ -40,8 +53,8 @@ bash_plugin_login() {
             echo "auto-tmux: not found from PATH" >&2
         fi
         unset atmux
-    elif [ -z "$SSH_CONNECTION" -a -z "$auto_tmux_enable" ]; then
-        # local shell, but tmux wasn't enabled
+    elif [ -z "$SSH_CONNECTION" -a -z "$auto_tmux_attach_at_login" ]; then
+        # local shell, but auto-tmux wasn't explicitly configured
         # skip attaching to the tmux session
         unset -v auto_tmux_env_root
         unset -f atmux-{reset,save}
@@ -160,7 +173,7 @@ bash_plugin_login() {
         
         # ask what to do
         local key=
-        bash_getkey key "auto-tmux: entering.. [r]esume | [n]ew | [s*]hell? " 1 r
+        bash_getkey key "auto-tmux: [r]esume, create a [n]ew tmux session, or [s*]hell? " 1 $default_key
         # new session should be started if there are no sessions yet
         [ x"$key" != x"r" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
         # take action depending on user input
@@ -179,7 +192,6 @@ bash_plugin_login() {
                     exit
                     ;;
                 [qQsS]|*) # if any other key was pressed, abort
-                    echo "auto-tmux: aborted.  Use \`atmux' to come back."
                     return
                     ;;
             esac
