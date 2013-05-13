@@ -9,13 +9,9 @@
 
 bash_plugin_login() {
     if [ -n "$TMUX" ]; then
-        _tmux_last_pwd=
         -tmux-sync-default-path() {
-            if [ x"$PWD" != x"$_tmux_last_pwd" ]; then
-                tmux set default-path "$PWD" |:
-                _tmux_last_pwd=$PWD
-            fi
+            tmux set default-path "$PWD" |:
         }
-        bash_insert_prompt -tmux-sync-default-path
+        bash_insert_chpwd -tmux-sync-default-path
     fi
 }

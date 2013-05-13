@@ -9,24 +9,20 @@
 
 bash_plugin_login() {
     if [ -n "$TMUX" ]; then
-        _tmux_cwd_title_pwd=
         -tmux-cwd-title-update() {
-            if [ "$PWD" != "$_tmux_cwd_title_pwd" ]; then
-                local title="${PWD##*/}"
-                case $PWD in
-                    "$HOME") # home
-                        title= ;;
-                    /) # root
-                        title="/" ;;
-                esac
-                if [ -n "$title" ]; then
-                    tmux rename-window "$title"
-                else
-                    tmux set-window-option -q automatic-rename on
-                fi
-                _tmux_cwd_title_pwd=$PWD
+            local title="${PWD##*/}"
+            case $PWD in
+                "$HOME") # home
+                    title= ;;
+                /) # root
+                    title="/" ;;
+            esac
+            if [ -n "$title" ]; then
+                tmux rename-window "$title"
+            else
+                tmux set-window-option -q automatic-rename on
             fi
         }
-        bash_add_prompt -tmux-cwd-title-update
+        bash_add_chpwd -tmux-cwd-title-update
     fi
 }
