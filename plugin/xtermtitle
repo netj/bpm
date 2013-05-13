@@ -9,7 +9,6 @@
 bash_plugin_load() {
     xtermtitle_postfix=
     bash_default xtermtitle_label ""
-    bash_default xtermtitle_mac_terminal false
     # xterm's dynamic title for some terminal types
     case $TERM in
         xterm* | cygwin* | screen*)
@@ -25,39 +24,32 @@ bash_plugin_load() {
         # Mac OS X Terminal.app's enhanced DnD support since Lion
         # See: http://www.macosxautomation.com/lion/terminal.html
         # See also: /private/etc/bashrc's update_terminal_cwd
-        if [ x"$TERM_PROGRAM" = x"Apple_Terminal" -a "${TERM_PROGRAM_VERSION:-0}" \> 297 ]; then
+        if ${xtermtitle_mac_terminal:-true} &&
+            [ x"$TERM_PROGRAM" = x"Apple_Terminal" -a "${TERM_PROGRAM_VERSION:-0}" \> 297 ]; then
             xtermtitle_mac_terminal=true
-            xtermtitle_mac_terminal_last_pwd=
-            xtermtitle_mac_terminal_pwd_url=
-            xtermtitle_mac_terminal_update() {
-                local pwd=$1
-                if [ x"$xtermtitle_mac_terminal_last_pwd" != x"$pwd" ]; then
-                    local pwd_url=
-                    case $pwd in
-                        "")
-                            ;;
-                        *)
-                            pwd_url="file://$HOSTNAME$pwd";
-                            # URL escaping from command-line: http://stackoverflow.com/questions/296536/urlencode-from-a-bash-script
-                            pwd_url=$(perl -MURI::Escape -e 'print uri_escape($ARGV[0],"^[:alpha:][:digit:]\-\._~:/");' "$pwd_url")
-                            ;;
-                    esac
-                    xtermtitle_mac_terminal_last_pwd=$pwd
-                    xtermtitle_mac_terminal_pwd_url=$pwd_url
-                    # display URL for the title bar icon
-                fi
-                printf '\e]7;%s\a' "$xtermtitle_mac_terminal_pwd_url"
+            -xtermtitle_mac_terminal_update() {
+                local pwd_url=
+                case $xtermtitle_label in
+                    "")
+                        pwd_url="file://$HOSTNAME$PWD";
+                        # URL escaping from command-line: http://stackoverflow.com/questions/296536/urlencode-from-a-bash-script
+                        pwd_url=$(perl -MURI::Escape -e 'print uri_escape($ARGV[0],"^[:alpha:][:digit:]\-\._~:/");' "$pwd_url")
+                        # display URL for the title bar icon
+                        ;;
+                esac
+                printf '\e]7;%s\a' "$pwd_url"
             }
+            bash_add_chpwd -xtermtitle_mac_terminal_update
+        else
+            xtermtitle_mac_terminal=false
         fi
         # xterm title controller
         title() {
-            xtermtitle_label=$*
-            if $xtermtitle_mac_terminal; then
-                # Apple Terminal.app
-                case $xtermtitle_label in
-                    "")
+            xtermtitle_label="$*"
+            case $xtermtitle_label in
+                "")
+                    if ${xtermtitle_mac_terminal:-true}; then # Apple Terminal.app
                         xtermtitle_update_title_icon() {
-                            xtermtitle_mac_terminal_update "$PWD"
                             local path=$PWD
                             local name=${path##*/}
                             local dir=${PWD/#$HOME/"~"}
@@ -72,19 +64,7 @@ bash_plugin_load() {
                             # [ $nrtabs -gt 1 -o $showtabbar = 1 ] || return
                             # icon="${name:-/} - ${title}"
                         }
-                        ;;
-                    *)
-                        xtermtitle_update_title_icon() {
-                            xtermtitle_mac_terminal_update ""
-                            title=$(eval echo "$xtermtitle_label")
-                            #title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
-                        }
-                        ;;
-                esac
-            else
-                # Default behavior
-                case $xtermtitle_label in
-                    "")
+                    else # Default behavior
                         xtermtitle_update_title_icon() {
                             local path=$PWD
                             local name=${path##*/}
@@ -94,15 +74,16 @@ bash_plugin_load() {
                             title+="(${dir:-/})"
                             title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
                         }
-                        ;;
-                    *)
-                        xtermtitle_update_title_icon() {
-                            title=$(eval echo "$xtermtitle_label")
-                            #title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
-                        }
-                        ;;
-                esac
-            fi
+                    fi
+                    ;;
+                *)
+                    xtermtitle_update_title_icon() {
+                        title=$(eval echo "$xtermtitle_label")
+                        #title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
+                    }
+                    ;;
+            esac
+            ! ${xtermtitle_mac_terminal:-true} || -xtermtitle_mac_terminal_update
         }
         # xterm title updater
         xtermtitle() {
