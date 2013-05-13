@@ -1,25 +1,38 @@
 #!/usr/bin/env bash
 # xterm dynamic title support
 # 
+# Usage:
+#   # give this shell a fixed xterm title, TITLE
+#   title TITLE...
+# 
+# Options:
+#   # set for a fixed default title (modified by the `title` command)
+#   xtermtitle_label=TITLE
+#
+#   # set false to disable OS X Terminal.app's icon support (since Lion)
+#   xtermtitle_mac_terminal=[|false|true]
+# 
+#
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2004-05-28
 # Requires: bpm.defaults bpm.prompt-hooks environment
 ################################################################################
 
 bash_plugin_load() {
-    xtermtitle_postfix=
+    _xtermtitle_postfix=
     bash_default xtermtitle_label ""
+    bash_default xtermtitle_mac_terminal ""
     # xterm's dynamic title for some terminal types
     case $TERM in
         xterm* | cygwin* | screen*)
         if [ -n "$TMUX" -o -n "$STY" ]; then
             # in tmux or screen we need not much details
-            xtermtitle_postfix=
+            _xtermtitle_postfix=
         else
             # plain terminal
             local tty=`tty`
             tty=${tty#/dev/}
-            xtermtitle_postfix="$tty^$hostnickname"
+            _xtermtitle_postfix="$tty^$hostnickname"
         fi
         # Mac OS X Terminal.app's enhanced DnD support since Lion
         # See: http://www.macosxautomation.com/lion/terminal.html
@@ -49,14 +62,14 @@ bash_plugin_load() {
             case $xtermtitle_label in
                 "")
                     if ${xtermtitle_mac_terminal:-true}; then # Apple Terminal.app
-                        xtermtitle_update_title_icon() {
+                        -xtermtitle_update_title_icon() {
                             local path=$PWD
                             local name=${path##*/}
                             local dir=${PWD/#$HOME/"~"}
                             dir=${dir%/$name}
                             title="(${dir:-/})"
-                            #title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
-                            icon=$xtermtitle_postfix
+                            #title+=${_xtermtitle_postfix:+ - $_xtermtitle_postfix}
+                            icon=$_xtermtitle_postfix
                             # TODO show name and dir only when the tab bar is shown
                             # local showtabbar=$(defaults read com.apple.Terminal ShowTabBar)
                             # local nrtabs=$(osascript -e 'tell application "Terminal" to number of tabs of front window')
@@ -65,30 +78,30 @@ bash_plugin_load() {
                             # icon="${name:-/} - ${title}"
                         }
                     else # Default behavior
-                        xtermtitle_update_title_icon() {
+                        -xtermtitle_update_title_icon() {
                             local path=$PWD
                             local name=${path##*/}
                             local dir=${PWD/#$HOME/"~"}
                             dir=${dir%/$name}
                             title+="${name:-/} - "
                             title+="(${dir:-/})"
-                            title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
+                            title+=${_xtermtitle_postfix:+ - $_xtermtitle_postfix}
                         }
                     fi
                     ;;
                 *)
-                    xtermtitle_update_title_icon() {
+                    -xtermtitle_update_title_icon() {
                         title=$(eval echo "$xtermtitle_label")
-                        #title+=${xtermtitle_postfix:+ - $xtermtitle_postfix}
+                        #title+=${_xtermtitle_postfix:+ - $_xtermtitle_postfix}
                     }
                     ;;
             esac
             ! ${xtermtitle_mac_terminal:-true} || -xtermtitle_mac_terminal_update
         }
         # xterm title updater
-        xtermtitle() {
+        -xtermtitle_update() {
             local title= icon=
-            xtermtitle_update_title_icon
+            -xtermtitle_update_title_icon
             # display both: title and icon string
             printf '\e]0;%s\a' "$title"
             # then override icon string if necessary
@@ -97,7 +110,7 @@ bash_plugin_load() {
         # use default if necessary
         title "$xtermtitle_label"
         # register it
-        bash_add_prompt xtermtitle
+        bash_add_prompt -xtermtitle_update
         ;;
     esac
 }
