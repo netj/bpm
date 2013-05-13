@@ -53,7 +53,7 @@ bash_plugin_login() {
             echo "auto-tmux: not found from PATH" >&2
         fi
         unset atmux
-    elif [ -z "$SSH_CONNECTION" -a -z "$auto_tmux_attach_at_login" ]; then
+    elif [ -z "$TMUX" -a -z "$SSH_CONNECTION" -a -z "$auto_tmux_attach_at_login" ]; then
         # local shell, but auto-tmux wasn't explicitly configured
         # skip attaching to the tmux session
         unset -v auto_tmux_env_root
@@ -170,6 +170,11 @@ bash_plugin_login() {
         # resumed tmux sessions.
         [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null ||
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
+
+        # a wrapper for invoking tmux
+        tmux_() {
+            tmux -2 "$@"
+        }
         
         # ask what to do
         local key=
@@ -181,17 +186,18 @@ bash_plugin_login() {
             case $key in
                 [nN]) # start a new one per request
                     echo "auto-tmux: starting new session"
-                    tmux -2 new-session
+                    tmux_ new-session
                     ;;
                 [rR]) # otherwise, default is to resume
                     echo "auto-tmux: resuming previous session"
-                    tmux -2 attach-session
+                    tmux_ attach-session
                     ;;
                 [xX])
                     # exit the shell
                     exit
                     ;;
                 [qQsS]|*) # if any other key was pressed, abort
+                    unset tmux_
                     return
                     ;;
             esac
