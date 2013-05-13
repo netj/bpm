@@ -7,6 +7,7 @@
 ################################################################################
 
 bash_plugin_load() {
+    -prompt-setup() {
     ###############################################################################
     # ANSI color codes                                                            #
     ###############################################################################
@@ -164,6 +165,15 @@ $user_part\
 \[$green\]"'$prompt_jobs_part'"\[$no_color\]&\
 $date_part\[$no_color\]\
 )\n\\$ "
+    }
+
+    # do not automatically setup prompt on subshells unless configured to do so
+    ! ${prompt_subshells:-false} || -prompt-setup
+}
+
+bash_plugin_login() {
+    # automatically setup prompt on login shells
+    -prompt-setup
 }
 
 # vim:et:ts=8:sw=4:sts=4
