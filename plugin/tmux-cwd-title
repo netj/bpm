@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Make tmux reflect the name of current working directory on window title
+# 
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2013-05-13
+# See-Also: http://www.commandlinefu.com/commands/view/10046/automatically-rename-tmux-window-using-the-current-working-directory 
+# Requires: bpm.prompt-hooks
+################################################################################
+
+bash_plugin_login() {
+    if [ -n "$TMUX" ]; then
+        _tmux_cwd_title_pwd=
+        -tmux-cwd-title-update() {
+            if [ "$PWD" != "$_tmux_cwd_title_pwd" ]; then
+                local title="${PWD##*/}"
+                case $PWD in
+                    "$HOME") # home
+                        title= ;;
+                    /) # root
+                        title="/" ;;
+                esac
+                if [ -n "$title" ]; then
+                    tmux rename-window "$title"
+                else
+                    tmux set-window-option -q automatic-rename on
+                fi
+                _tmux_cwd_title_pwd=$PWD
+            fi
+        }
+        bash_add_prompt -tmux-cwd-title-update
+    fi
+}
