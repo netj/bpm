@@ -76,6 +76,23 @@ bash_plugin_load() {
                 command "$cmd" "$@"
                 title "$oldlabel"
             }
+            # WIP: an alternative (but inefficient) way to wrapping commands is using DEBUG trap as below:
+            #-xtermtitle_mac_terminal_update_hook() {
+            #    case $BASH_COMMAND in
+            #        @(ssh|mosh)" "*)
+            #            (
+            #            set -- $BASH_COMMAND
+            #            # TODO find hostname from $BASH_COMMAND
+            #            -xtermtitle_mac_terminal_set_remote $2
+            #            echo notitle
+            #            )
+            #            ;;
+            #        *)
+            #            ;;
+            #    esac
+            #    echo "DEBUG: $BASH_COMMAND"
+            #}
+            ##trap -xtermtitle_mac_terminal_update_hook DEBUG
         else
             xtermtitle_mac_terminal=false
         fi
