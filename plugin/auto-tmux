@@ -136,7 +136,8 @@ bash_plugin_login() {
         
         # prepare hooks for prompt, cleanup
         bash_insert_prompt -atmux-poll
-        bash_add_unloader "rm -f \"$auto_tmux_link\""
+        -atmux_unload() { rm -f "$auto_tmux_link"; }
+        bash_add_unloader -atmux_unload
     else
         # working outside tmux,
         # create a environment snapshot for shells inside tmux
@@ -151,7 +152,8 @@ bash_plugin_login() {
         chmod a=,u=rw "$auto_tmux_env"
         auto_tmux_link=$auto_tmux_env atmux-save
         # before exiting, clean it up
-        bash_add_unloader "rm -f \"$auto_tmux_env\""
+        -atmux_unload() { rm -f "$auto_tmux_env"; }
+        bash_add_unloader -atmux_unload
         
         echo "auto-tmux: connection #$conn"
         
