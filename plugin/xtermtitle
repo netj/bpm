@@ -38,7 +38,7 @@ bash_plugin_load() {
         # See: http://www.macosxautomation.com/lion/terminal.html
         # See also: /private/etc/bashrc's update_terminal_cwd
         if ${xtermtitle_mac_terminal:-true} &&
-            [ x"$TERM_PROGRAM" = x"Apple_Terminal" -a "${TERM_PROGRAM_VERSION:-0}" \> 297 ]; then
+            [[ -z $TMUX && $TERM_PROGRAM = "Apple_Terminal" && ${TERM_PROGRAM_VERSION:-0} -gt 297 ]]; then
             xtermtitle_mac_terminal=true
             -xtermtitle_mac_terminal_set_url() { printf '\e]7;%s\a' "$1"; }
             -xtermtitle_mac_terminal_update() {
@@ -56,25 +56,34 @@ bash_plugin_load() {
             bash_add_chpwd -xtermtitle_mac_terminal_update
             
             # disable these feature when accessing remote hosts w/ ssh, mosh, etc.
-            ssh()  { -xtermtitle_mac_terminal_disable_for ssh  "$@"; }
-            mosh() { -xtermtitle_mac_terminal_disable_for mosh "$@"; }
+            ssh()  { -xtermtitle_mac_terminal_disable_for_sshish ssh  "$@"; }
+            mosh() { -xtermtitle_mac_terminal_disable_for_sshish mosh "$@"; }
+            tmux() { -xtermtitle_mac_terminal_disable_for        "" tmux "$@"; }
             -xtermtitle_mac_terminal_disable_for() {
                 # look for hostname
+                local url=$1; shift
                 local cmd=$1; shift
-                local remotehost= arg= skip=false
+                local oldlabel=$xtermtitle_label; [ -n "$xtermtitle_label" ] || { title "$cmd"; -xtermtitle_update; }
+                -xtermtitle_mac_terminal_set_url "$url"
+                command "$cmd" "$@"
+                title "$oldlabel"
+            }
+            -xtermtitle_mac_terminal_disable_for_sshish() {
+                local remotehost="$(shift; -xtermtitle_mac_terminal_find_hostname "$@")"
+                -xtermtitle_mac_terminal_disable_for "file://$remotehost/${remotehost%%.*}" "$@"
+            }
+            -xtermtitle_mac_terminal_find_hostname() {
+                local arg= skip=false
                 for arg; do
                     ! $skip || { skip=false; continue; }
                     case $arg in
-                        # ssh options with args
+                        # skip ssh options with args
                         -[bcDeFIilmOopRSWw]) skip=true ;;
                         -*) continue ;;
-                        *) remotehost=$arg; break ;;
+                        *) echo "$arg"; return ;;
                     esac
                 done
-                local oldlabel=$xtermtitle_label; [ -n "$xtermtitle_label" ] || { title "$cmd"; -xtermtitle_update; }
-                -xtermtitle_mac_terminal_set_url "file://$remotehost/${remotehost%%.*}" #$(ssh $remotehost pwd)"
-                command "$cmd" "$@"
-                title "$oldlabel"
+                false
             }
             # WIP: an alternative (but inefficient) way to wrapping commands is using DEBUG trap as below:
             #-xtermtitle_mac_terminal_update_hook() {
