@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vocabularies for path manipulation
+# Bash plugin manager utilities and vocabularies.
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2011-12-24
@@ -7,6 +7,26 @@
 
 bash_plugin_load() {
 
+## for setting defaults
+bash_default() {
+    local name=$1
+    local value=$2
+    if declare -p "$name" &>/dev/null; then
+        false
+    else
+        export -n "$name=$value"
+    fi
+}
+bash_default_env() {
+    bash_default "$@"
+    export -- "$1"
+}
+bash_default_alias() {
+    alias -- "$1" 2>/dev/null >&2 || alias -- "$1=$2"
+}
+
+
+## for manipulating strings
 # bash_escape will escape all the arguments so it can be used as a flat string,
 #  e.g., sh -c "foo; bar $(bash_escape "$@")"
 bash_escape() {
@@ -15,6 +35,8 @@ bash_escape() {
     echo "${s# }"
 }
 
+
+## for manipulating variables with any separator, e.g. PATH, CLASSPATH, PROMPT_COMMAND
 # bash_add_with_separator will insert all given strings with separator to the variable
 #  Usage: bash_add_with_separator : FIGNORE .o .svn
 bash_add_with_separator() {
@@ -65,6 +87,8 @@ bash_remove_with_separator() {
     done
 }
 
+
+## for manipulating variables with paths, e.g. PATH, LD_LIBRARY_PATH, ...
 # bash_only_with_existent_paths will run given command (up to -- arg) with the existing paths given after -- arg
 #  Usage: bash_only_with_existent_paths bash_insert_path -- /usr/local/bin
 bash_only_with_existent_paths() {
@@ -103,5 +127,34 @@ bash_insert_path_if_not() {
 # bash_insert_path will put given paths at the beginning of the variable avoiding duplicates separated by :
 #  Usage: bash_insert_path PATH /usr/local/bin
 bash_insert_path() { bash_remove_path "$@"; bash_insert_path_if_not "$@"; }
+
+
+## for manipulating variables with commands, e.g., PROMPT_COMMAND
+-normalize_commands() {
+    eval -- "shopt -s extglob
+        $1=\${$1//*( );*( )/;}
+        $1=\${$1//;;/;}
+        "
+}
+bash_add_command_if_not() {
+    -normalize_commands "$1"
+    bash_add_with_separator ';' "$@"
+}
+bash_remove_command() {
+    -normalize_commands "$1"
+    bash_remove_with_separator ';' "$@"
+}
+bash_insert_command_if_not() {
+    -normalize_commands "$1"
+    bash_insert_with_separator ';' "$@"
+}
+bash_add_command() {
+    bash_remove_command "$@"
+    bash_add_command_if_not "$@"
+}
+bash_insert_command() {
+    bash_remove_command "$@"
+    bash_insert_command_if_not "$@"
+}
 
 }

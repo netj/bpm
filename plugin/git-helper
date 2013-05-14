@@ -3,7 +3,7 @@
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2012-06-13
-# Requires: bpm.defaults
+# Requires: bpm.utils
 ################################################################################
 
 bash_plugin_login() {

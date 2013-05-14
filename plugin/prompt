@@ -3,7 +3,7 @@
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2002-07-18
-# Requires: environment bpm.prompt-hooks
+# Requires: bpm.utils bpm.events environment
 ################################################################################
 
 bash_plugin_load() {

@@ -14,7 +14,7 @@
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2010-12-16
-# Requires: bpm.defaults bpm.exit-hooks bpm.interactive environment
+# Requires: bpm.utils bpm.events bpm.interactive environment
 # Conflicts: screen
 ################################################################################
 

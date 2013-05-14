@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# vocabularies for manipulating PROMPT_COMMAND hooks
+# Vocabularies for handling events, such as prompt, exit, $PWD change.
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2011-12-24
-# Requires: bpm.path-manipulation
+# Requires: bpm.utils
 ################################################################################
 
 bash_plugin_load() {
 
-# chpwd a la zsh's
+## hooks for $PWD change (chpwd a la zsh's)
 CHPWD_COMMAND= _chpwd_lastpwd=
 bash_add_chpwd()    { bash_add_command    CHPWD_COMMAND "$@"; }
 bash_remove_chpwd() { bash_remove_command CHPWD_COMMAND "$@"; }
@@ -20,35 +20,8 @@ bash_insert_chpwd() { bash_insert_command CHPWD_COMMAND "$@"; }
     fi
 }
 
-# add/remove/insert commands to a variable
--normalize_commands() {
-    eval -- "shopt -s extglob
-        $1=\${$1//*( );*( )/;}
-        $1=\${$1//;;/;}
-        "
-}
-bash_add_command_if_not() {
-    -normalize_commands "$1"
-    bash_add_with_separator ';' "$@"
-}
-bash_remove_command() {
-    -normalize_commands "$1"
-    bash_remove_with_separator ';' "$@"
-}
-bash_insert_command_if_not() {
-    -normalize_commands "$1"
-    bash_insert_with_separator ';' "$@"
-}
-bash_add_command() {
-    bash_remove_command "$@"
-    bash_add_command_if_not "$@"
-}
-bash_insert_command() {
-    bash_remove_command "$@"
-    bash_insert_command_if_not "$@"
-}
 
-# registering handlers
+## hooks for prompt change (PROMPT_COMMAND)
 PROMPT_COMMAND="-chpwd-detect"
 bash_add_prompt()    { bash_add_command    PROMPT_COMMAND "$@"; }
 bash_remove_prompt() { bash_remove_command PROMPT_COMMAND "$@"; }
@@ -56,5 +29,13 @@ bash_insert_prompt() {
     bash_remove_command PROMPT_COMMAND      -chpwd-detect
     bash_insert_command PROMPT_COMMAND "$@" -chpwd-detect
 }
+
+
+## hooks for EXIT
+ONEXIT_COMMAND=
+bash_add_unloader()    { bash_add_command    ONEXIT_COMMAND "$@"; }
+bash_remove_unloader() { bash_remove_command ONEXIT_COMMAND "$@"; }
+bash_insert_unloader() { bash_insert_command ONEXIT_COMMAND "$@"; }
+trap 'eval -- "$ONEXIT_COMMAND"' EXIT
 
 }

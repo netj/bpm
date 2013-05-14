@@ -3,7 +3,7 @@
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-05-13
-# Requires: bpm.path-manipulation
+# Requires: bpm.utils
 ################################################################################
 
 bash_plugin_login() {
