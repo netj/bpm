@@ -20,8 +20,6 @@
 
 bash_plugin_login() {
     bash_default auto_tmux_env_root /tmp/auto-tmux.${SUDO_USER:-$LOGNAME}
-    # decide default behavior (to resume or just enter the shell)
-    local default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
     # a shorthand for enabling auto-tmux
     atmux() { auto_tmux_attach_at_login=true bash -l; }
     # load values from tmux environment snapshot
@@ -163,6 +161,9 @@ bash_plugin_login() {
         [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null ||
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
 
+        -atmux_loop() {
+        # decide default behavior (to resume or just enter the shell)
+        local default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
         # a wrapper for invoking tmux
         tmux_() {
             tmux -2 "$@"
@@ -190,12 +191,16 @@ bash_plugin_login() {
                     ;;
                 [qQsS]|*) # if any other key was pressed, abort
                     unset tmux_
+                    bash_remove_prompt -atmux_loop
                     return
                     ;;
             esac
             # after a tmux session ends, give a chance to visit the shell
             bash_getkey key "auto-tmux: e[x]iting.. [r]esume | [n]ew | [s*]hell? " 1 x
         done
+        }
+        # get into auto tmux loop after loading everything (hence, showing prompt)
+        bash_add_prompt -atmux_loop
     fi
 }
 

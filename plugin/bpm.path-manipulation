@@ -58,9 +58,9 @@ bash_remove_with_separator() {
     local val=
     for val in "$@"; do
         if [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]]; then
-            export $flg $name=${!name//$sep$val$sep/$sep}
-            export $flg $name=${!name#$val$sep}
-            export $flg $name=${!name%$sep$val}
+            export $flg $name="${!name//$sep$val$sep/$sep}"
+            export $flg $name="${!name#$val$sep}"
+            export $flg $name="${!name%$sep$val}"
         fi
     done
 }
