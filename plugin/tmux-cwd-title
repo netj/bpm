@@ -20,8 +20,8 @@ bash_plugin_login() {
             if [ -n "$title" ]; then
                 tmux rename-window "$title"
             else
-                tmux set-window-option -q automatic-rename on
-            fi
+                tmux set-window-option automatic-rename on
+            fi | cat >/dev/null # XXX tmux hangs without cat, -q is only available >= 1.7
         }
         bash_add_chpwd -tmux-cwd-title-update
     fi
