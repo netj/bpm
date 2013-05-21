@@ -133,6 +133,21 @@ bash_plugin_login() {
             # remove stale links
             find -L "$auto_tmux_env_root" -type l -exec rm -f {} \;
         }
+
+        atmux-record-windows() {
+            local f=${1:-~/.tmux.windows}
+            # try to save at which dirs panes were
+            # XXX storing working dir only
+            # TODO can we remember env, command, args and restore it as well?
+            # See: http://stackoverflow.com/a/1727031/390044
+            lsof -a -p "$(tmux lsp -a -F'#{pane_pid}' | tr '\n' ,)" -d cwd -Fn |
+            sed -n '/^n/ s/^n//p' >"$f"
+        }
+        atmux-respawn-windows() {
+            local f=${1:-~/.tmux.windows}
+            # create new windows based on the recorded state
+            xargs -L1 <"$f" tmux neww -c
+        }
         
         # prepare hooks for prompt, cleanup
         bash_insert_prompt -atmux-poll
