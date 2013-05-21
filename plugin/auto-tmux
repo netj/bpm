@@ -146,7 +146,13 @@ bash_plugin_login() {
         atmux-respawn-windows() {
             local f=${1:-~/.tmux.windows}
             # create new windows based on the recorded state
-            xargs -L1 <"$f" tmux neww -c
+            if type -- -tmux-cwd-title-update &>/dev/null; then
+                while read -r cwd; do
+                    tmux new-window -c "$cwd" -n "${cwd##*/}"
+                done <"$f"
+            else
+                xargs -L1 <"$f" tmux new-window -c
+            fi
         }
         
         # prepare hooks for prompt, cleanup
