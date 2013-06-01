@@ -12,6 +12,6 @@ bash_plugin_login() {
         -tmux-sync-default-path() {
             tmux set default-path "$PWD" |:
         }
-        bash_insert_chpwd -tmux-sync-default-path
+        bash_insert_prompt -tmux-sync-default-path
     fi
 }
