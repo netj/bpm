@@ -58,7 +58,7 @@ bash_plugin_load() {
             # disable these feature when accessing remote hosts w/ ssh, mosh, etc.
             ssh()  { -xtermtitle_mac_terminal_disable_for_sshish ssh  "$@"; }
             mosh() { -xtermtitle_mac_terminal_disable_for_sshish mosh "$@"; }
-            tmux() { -xtermtitle_mac_terminal_disable_for        "" tmux "$@"; }
+            tmux() { -xtermtitle_mac_terminal_disable_for     "" tmux "$@"; }
             -xtermtitle_mac_terminal_disable_for() {
                 # look for hostname
                 local url=$1; shift
@@ -69,21 +69,32 @@ bash_plugin_load() {
                 title "$oldlabel"
             }
             -xtermtitle_mac_terminal_disable_for_sshish() {
-                local remotehost="$(shift; -xtermtitle_mac_terminal_find_hostname "$@")"
-                -xtermtitle_mac_terminal_disable_for "file://$remotehost/${remotehost%%.*}" "$@"
+            local remotehost="$(shift; -xtermtitle_mac_terminal_find_hostname "$@")"
+                if [[ -n "$remotehost" ]]; then
+                    -xtermtitle_mac_terminal_disable_for "file://$remotehost/${remotehost%%.*}" "$@"
+                else
+                    command "$@"
+                fi
             }
             -xtermtitle_mac_terminal_find_hostname() {
-                local arg= skip=false
+                local arg= skip=false hostname=
                 for arg; do
                     ! $skip || { skip=false; continue; }
                     case $arg in
                         # skip ssh options with args
                         -[bcDeFIilmOopRSWw]) skip=true ;;
                         -*) continue ;;
-                        *) echo "$arg"; return ;;
+                        *)
+                            if [[ -z "$hostname" ]]; then
+                                hostname=$arg
+                            else # supposedly a command is following
+                                hostname= # do not report hostname
+                                break
+                            fi
+                            ;;
                     esac
                 done
-                false
+                echo "$hostname"
             }
             # WIP: an alternative (but inefficient) way to wrapping commands is using DEBUG trap as below:
             #-xtermtitle_mac_terminal_update_hook() {
