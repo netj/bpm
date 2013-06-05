@@ -9,6 +9,7 @@
 bash_plugin_login() {
     bash_default_alias g    "git status"
     bash_default_alias gd   "git diff"
+    bash_default_alias gds  "git diff --staged"
     bash_default_alias gdc  "git diff --cached"
     bash_default_alias gD   "git diff HEAD"
     bash_default_alias ga   "git add"
@@ -16,8 +17,14 @@ bash_plugin_login() {
     bash_default_alias gl   "git log --decorate --graph"
     bash_default_alias gb   "git branch -v"
     bash_default_alias gc   "git checkout"
-    bash_default_alias gri  "git rebase -i"
+    bash_default_alias gcb  "git checkout -b"
+    bash_default_alias gC   "git commit"
+    bash_default_alias gCA  "git commit --amend"
+    bash_default_alias gR   "git rebase"
+    bash_default_alias gRi  "git rebase -i"
     bash_default_alias gru  "git remote update"
+    bash_default_alias gss  "git submodule summary"
+    bash_default_alias gsu  "git submodule update --init"
     # launch Vim with fugitive :Gstatus
     bash_default_alias gg   'vim +Gstatus +only "$PWD"'
 }
