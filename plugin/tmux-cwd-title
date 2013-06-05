@@ -13,7 +13,6 @@ bash_plugin_login() {
             local title="${PWD##*/}"
             local prevtitle=$(tmux list-pane -F "#{window_name}" | head -n 1)
             [[ $prevtitle = ${OLDPWD##*/} || $prevtitle = bash && $(
-                    tmux show-window-options automatic-rename 2>/dev/null ||
                     tmux show-window-options    | grep automatic-rename ||
                     tmux show-window-options -g | grep automatic-rename
                 ) = "automatic-rename on" ]] ||
