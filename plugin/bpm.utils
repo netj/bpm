@@ -46,7 +46,7 @@ bash_add_with_separator() {
     local val=
     for val in "$@"; do
         if [[ -n "${!name}" ]]; then
-            ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
+            ! [[ "${!name}" =~ '$sep$val$sep|^$val($sep|$)|$sep$val$' ]] || continue
             export $flg $name="${!name}$sep$val"
         else
             export $flg $name=$val
@@ -63,7 +63,7 @@ bash_insert_with_separator() {
     local val=
     for val in "$@"; do
         if [[ -n "${!name}" ]]; then
-            ! [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]] || continue
+            ! [[ "${!name}" =~ '$sep$val$sep|^$val($sep|$)|$sep$val$' ]] || continue
             export $flg $name="$val$sep${!name}"
         else
             export $flg $name=$val
@@ -79,7 +79,7 @@ bash_remove_with_separator() {
     local flg=; [[ $(declare -p $name 2>/dev/null) =~ ^declare\ -x ]] || flg=-n
     local val=
     for val in "$@"; do
-        if [[ "${!name}" =~ $sep$val$sep|^$val($sep|$)|$sep$val$ ]]; then
+        if [[ "${!name}" =~ '$sep$val$sep|^$val($sep|$)|$sep$val$' ]]; then
             export $flg $name="${!name//$sep$val$sep/$sep}"
             export $flg $name="${!name#$val$sep}"
             export $flg $name="${!name%$sep$val}"
