@@ -141,6 +141,7 @@ bash_plugin_login() {
     bash_default_alias mv "mv -i"
     bash_default_alias rm "rm -i"
     bash_default_alias -  "cd -"
+    bash_default_alias dirs "dirs -p"
     # keep history clean and long enough
     # See: http://briancarper.net/blog/248/
     bash_add_prompt "history -a"
