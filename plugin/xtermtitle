@@ -56,8 +56,11 @@ bash_plugin_load() {
             bash_add_chpwd -xtermtitle_mac_terminal_update
             
             # disable these feature when accessing remote hosts w/ ssh, mosh, etc.
+            ! type -P ssh &>/dev/null ||
             ssh()  { -xtermtitle_mac_terminal_disable_for_sshish ssh  "$@"; }
+            ! type -P mosh &>/dev/null ||
             mosh() { -xtermtitle_mac_terminal_disable_for_sshish mosh "$@"; }
+            ! type -P tmux &>/dev/null ||
             tmux() { -xtermtitle_mac_terminal_disable_for     "" tmux "$@"; }
             -xtermtitle_mac_terminal_disable_for() {
                 # look for hostname
