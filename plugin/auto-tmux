@@ -179,8 +179,11 @@ bash_plugin_login() {
         # if it seems we're relying on Kerberos+AFS, put tmux in its own PAG
         # with a fresh AFS token to cope with file access problems in the
         # resumed tmux sessions.
-        [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null ||
+        local hasKerberosAndAFS=false
+        [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null || {
+            hasKerberosAndAFS=true
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
+        }
 
         -atmux_loop() {
         # decide default behavior (to resume or just enter the shell)
@@ -204,6 +207,11 @@ bash_plugin_login() {
                     ;;
                 [rR]) # otherwise, default is to resume
                     echo "auto-tmux: resuming previous session"
+                    ! $hasKerberosAndAFS || {
+                        # refresh AFS token before attaching
+                        tmux set-environment -g KRB5CCNAME "$KRB5CCNAME"
+                        tmux new-window -d aklog
+                    } &>/dev/null
                     tmux_ attach-session
                     ;;
                 [xX])
