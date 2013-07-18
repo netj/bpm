@@ -13,7 +13,7 @@
 #   bpm disable PLUGIN...
 #   bpm off PLUGIN...
 # 
-#   bpm load
+#   bpm load [PLUGIN...]
 #   bpm vocabularies
 # 
 #   bpm help
@@ -176,7 +176,8 @@ bpm() {
             ;;
 
         load) # load all plug-ins
-            bpm_load $(bpm_list_enabled_by_deps)
+            [ $# -gt 0 ] || set -- $(bpm_list_enabled_by_deps)
+            bpm_load "$@"
             BPM_LOADED=true
             ;;
 
@@ -214,5 +215,9 @@ __bpmcomp() {
 }
 complete -F __bpmcomp bpm
 
-# pass arguments to bpm if any
+# with bpm vocabularies from now on...
+bpm vocabularies
+# source bpm run commands first
+! [ -r ~/.bpmrc ] || . ~/.bpmrc
+# then pass arguments to bpm if given
 [ $# -eq 0 ] || bpm "$@"

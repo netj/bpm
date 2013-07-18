@@ -10,10 +10,6 @@ bash_plugin_load() {
     # variables
     hostnickname=${HOSTNAME%%.*}
     hostdomain=${HOSTNAME#*.}
-    #  Korean
-    bash_default_env LANG ko_KR.UTF-8
-    bash_default_env LC_ALL $LANG
-    bash_default_env LANGUAGE $LANG
     local uname=`uname`
     # platform specific settings
     case $uname in
@@ -28,32 +24,27 @@ bash_plugin_load() {
             eval `/usr/libexec/path_helper -s`
             PATH=$PATH_orig
             # some stuffs get installed on /usr/local
-            bash_insert_path_if_not PATH /usr/local/sbin /usr/local/bin
-            bash_insert_path_if_not MANPATH /usr/local/man /usr/local/share/man
+            bash_insert_path PATH /usr/local/sbin /usr/local/bin
+            bash_insert_path MANPATH /usr/local/man /usr/local/share/man
             if type brew &>/dev/null; then
                 # Prefer Homebrew (http://mxcl.github.com/homebrew/)
                 local brewPrefix=`brew --prefix`
-                bash_insert_path_if_not PATH "$brewPrefix"/sbin "$brewPrefix"/bin
-                bash_insert_path_if_not MANPATH "$brewPrefix"/man "$brewPrefix"/share/man
+                bash_insert_path PATH "$brewPrefix"/sbin "$brewPrefix"/bin
+                bash_insert_path MANPATH "$brewPrefix"/man "$brewPrefix"/share/man
                 # prefer GNU coreutils to BSD ones
                 if local coreutils_Cellar=$(brew --prefix coreutils 2>/dev/null); then
-                    bash_insert_path_if_not PATH "$coreutils_Cellar/libexec/gnubin"
-                    bash_insert_path_if_not MANPATH "$coreutils_Cellar/libexec/gnuman"
-                fi
-                # Use autojump if available
-                if [[ -s "$brewPrefix"/etc/autojump.sh ]]; then
-                    . "$brewPrefix"/etc/autojump.sh
-                    PROMPT_COMMAND+=";" # XXX workaround
+                    bash_insert_path PATH "$coreutils_Cellar/libexec/gnubin"
+                    bash_insert_path MANPATH "$coreutils_Cellar/libexec/gnuman"
                 fi
             elif [ -x /opt/local/bin/port ]; then
                 # Paths for MacPorts (http://www.macports.org/)
-                bash_insert_path_if_not PATH /opt/local/sbin /opt/local/libexec/gnubin /opt/local/bin
-                bash_insert_path_if_not MANPATH /opt/local/man /opt/local/share/man
+                bash_insert_path PATH /opt/local/sbin /opt/local/libexec/gnubin /opt/local/bin
+                bash_insert_path MANPATH /opt/local/man /opt/local/share/man
             fi
         ;;
     esac
     # add ~/bin to PATH
-    bash_insert_path_if_not PATH ~/bin
+    bash_insert_path PATH ~/bin
 }
 
 bash_plugin_login() {
