@@ -81,8 +81,8 @@ bpm() {
         . "$BPM_HOME"/plugin/"$bash_plugin"
         # and load it
         bash_plugin_load
-        # and load more for login shells
-        ! shopt -q login_shell || bash_plugin_login
+        # and load more for interactive login shells
+        [[ ${-//i/} = $- ]] || ! shopt -q login_shell || bash_plugin_login
         unset bash_plugin_{load,login}
     }
     bpm_load() {
