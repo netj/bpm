@@ -111,7 +111,7 @@ bpm() {
                     local pf="$BPM_HOME"/plugin/"$p"
                     [ -e "$pf" ] || { error "$p: Dangling plugin enabled"; continue; }
                     for dep in $(sed -n '/^# Requires: / s/^# Requires: *//p' <"$pf"); do
-                        if ! grep -q "$(printf '^%q$' "$dep")" "$tmp"/seen; then
+                        if ! grep -qxF "$dep" "$tmp"/seen; then
                             bpm_is plugin "$dep" "Unknown plug-in required by $p" || continue
                             echo "$dep" >>"$tmp"/more
                             echo "$dep" >>"$tmp"/seen
