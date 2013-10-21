@@ -4,6 +4,7 @@
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2013-05-09
 ################################################################################
+shopt -s extglob
 
 bash_plugin_load() {
 
@@ -18,7 +19,6 @@ bash_plugin_load() {
 #   bash_getkey VAR "[a] do one thing; [b] do another; or [q*]uit" 2 a
 bash_getkey() {
     local keyVarName=$1 prompt=$2 timeout=${3:-} defaultkey=${4:-}
-    shopt -s extglob
     local keys=${prompt//\]*([^\[\]])\[/}; keys=${keys#*\[}; keys=${keys%\]*}
     case $keys in
         *"*"*) keys="?" ;;
@@ -36,8 +36,9 @@ bash_getkey() {
     local intr=false
     trap "intr=true" INT
     while ! $intr; do
+        REPLY=
         read -p "$prompt" -n 1 ${timeout:+-t $timeout} -s
-        REPLY=${REPLY#[ 	]}
+        REPLY=${REPLY#[[:space:]]}
         [ -n "$REPLY" ] || REPLY=$defaultkey
         echo "$REPLY"
         [[ $REPLY = ${REPLY/$keys} ]] || break
