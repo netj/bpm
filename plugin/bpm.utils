@@ -30,8 +30,14 @@ bash_default_alias() {
 # bash_escape will escape all the arguments so it can be used as a flat string,
 #  e.g., sh -c "foo; bar $(bash_escape "$@")"
 bash_escape() {
-    local s= a=
-    for a; do s+=" '"${a//"'"/"'\\''"}"'"; done
+    local s= a= e=
+    for a; do
+        e="'"${a//"'"/"'\\''"}"'"
+        e=${e//[
+]/\'\$\'\\n\'\'}
+        e=${e//[]/\'\$\'\\r\'\'}
+        s+=" $e"
+    done
     echo "${s# }"
 }
 
