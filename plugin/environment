@@ -3,7 +3,7 @@
 # 
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2002-07-15
-# Requires: bpm.utils
+# Requires: bpm.utils bpm.events
 ################################################################################
 
 bash_plugin_load() {
