@@ -268,13 +268,14 @@ __bpm_load1_declared_variables() {
     ' | sort
 }
 __bpm_load1_hijack_source() {
+: ${__bpm_load1_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
 source() {
     # track which variables have changed during source
-    __bpm_load1_declared_variables >"$BPM_TMPDIR"/vars.before
+    __bpm_load1_declared_variables >"$__bpm_load1_tmpdir"/vars.before
     __bpm_load1_preserve_changed_vars() {
         declare -p $(__bpm_load1_declared_variables |
-            comm -13 "$BPM_TMPDIR"/vars.before - |
-            cut -f2) >"$BPM_TMPDIR"/vars.sourced
+            comm -13 "$__bpm_load1_tmpdir"/vars.before - |
+            cut -f2) >"$__bpm_load1_tmpdir"/vars.sourced
     }
     __bpm_load1_source() {
         unset -f source .  # pause hijacking uses of source/.
@@ -285,7 +286,7 @@ source() {
     trap - RETURN
     # declare all changed variables as global
     declare() { builtin declare -g "$@" 2>/dev/null; }
-    builtin source "$BPM_TMPDIR"/vars.sourced
+    builtin source "$__bpm_load1_tmpdir"/vars.sourced
     unset -f declare \
         __bpm_load1_source \
         __bpm_load1_preserve_changed_vars \
@@ -301,7 +302,8 @@ builtin source "$__bpm_compiled"
 BPM_LOADED=true
 
 # and restore the environment
-unset -v __bpm_compiled
+rm -rf -- "$__bpm_load1_tmpdir"
+unset -v __bpm_compiled __bpm_load1_tmpdir
 unset -f __bpm_load1 \
     __bpm_load1_declared_variables \
     __bpm_load1_hijack_source \
