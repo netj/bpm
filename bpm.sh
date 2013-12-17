@@ -203,6 +203,7 @@ __bpm_compile() {
     {
         echo '#!/usr/bin/env bash'
         echo '# bash plugins compiled by bpm (https://github.com/netj/bpm)'
+        echo
     } >"$script"
     mkdir -p "$BPM_TMPDIR"/compiled
     local bash_plugin=
@@ -238,6 +239,10 @@ __bpm_compile() {
         fi
         ! [[ -s "$compiled" ]] || cat "$compiled" >>"$script"
     done
+    {
+        echo
+        echo 'unset -f __bpm_load1'
+    } >>"$script"
 }
 
 __bpm_compile_enabled() {
@@ -256,7 +261,7 @@ unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 
 # prepare environment to source the compiled plugin load script
 unset -f builtin declare source
-__bpm_load1_declared_variables() {
+__bpm_loader_declared_variables() {
     declare -p | sh -c '
         declare() {
             printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
@@ -267,48 +272,44 @@ __bpm_load1_declared_variables() {
         builtin source /dev/stdin
     ' | sort
 }
-__bpm_load1_hijack_source() {
-: ${__bpm_load1_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
+__bpm_loader_hijack_source() {
+: ${__bpm_loader_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
 source() {
     # track which variables have changed during source
-    __bpm_load1_declared_variables >"$__bpm_load1_tmpdir"/vars.before
-    __bpm_load1_preserve_changed_vars() {
-        declare -p $(__bpm_load1_declared_variables |
-            comm -13 "$__bpm_load1_tmpdir"/vars.before - |
-            cut -f2) >"$__bpm_load1_tmpdir"/vars.sourced
+    __bpm_loader_declared_variables >"$__bpm_loader_tmpdir"/vars.before
+    __bpm_loader_preserve_changed_vars() {
+        declare -p $(__bpm_loader_declared_variables |
+            comm -13 "$__bpm_loader_tmpdir"/vars.before - |
+            cut -f2) >"$__bpm_loader_tmpdir"/vars.sourced
     }
-    __bpm_load1_source() {
+    __bpm_loader_source() {
         unset -f source .  # pause hijacking uses of source/.
-        trap __bpm_load1_preserve_changed_vars RETURN
+        trap __bpm_loader_preserve_changed_vars RETURN
         builtin source "$@"
     }
-    __bpm_load1_source "$@"
+    __bpm_loader_source "$@"
     trap - RETURN
     # declare all changed variables as global
     declare() { builtin declare -g "$@" 2>/dev/null; }
-    builtin source "$__bpm_load1_tmpdir"/vars.sourced
+    builtin source "$__bpm_loader_tmpdir"/vars.sourced
     unset -f declare \
-        __bpm_load1_source \
-        __bpm_load1_preserve_changed_vars \
+        __bpm_loader_source \
+        __bpm_loader_preserve_changed_vars \
         #
-    __bpm_load1_hijack_source  # resume hijacking uses of source/.
+    __bpm_loader_hijack_source  # resume hijacking uses of source/.
 }
 .() { source "$@"; }
 }
-__bpm_load1_hijack_source
+__bpm_loader_hijack_source
 
 # then source the plugins
 builtin source "$__bpm_compiled"
 BPM_LOADED=true
 
 # and restore the environment
-rm -rf -- "$__bpm_load1_tmpdir"
-unset -v __bpm_compiled __bpm_load1_tmpdir
-unset -f __bpm_load1 \
-    __bpm_load1_declared_variables \
-    __bpm_load1_hijack_source \
-    source . \
-    #
+rm -rf -- "$__bpm_loader_tmpdir"
+unset -v __bpm_compiled __bpm_loader_tmpdir
+unset -f __bpm_loader_declared_variables __bpm_loader_hijack_source source .
 
 ################################################################################
 
