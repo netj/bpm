@@ -291,7 +291,7 @@ source() {
     trap - RETURN
     # declare all changed variables as global
     declare() { builtin declare -g "$@" 2>/dev/null; }
-    builtin source "$__bpm_loader_tmpdir"/vars.sourced
+    builtin source "$__bpm_loader_tmpdir"/vars.sourced 2>/dev/null
     unset -f declare \
         __bpm_loader_source \
         __bpm_loader_preserve_changed_vars \
