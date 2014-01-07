@@ -105,6 +105,7 @@ bpm() {
                 __bpm_is plugin "$p" || continue
                 __bpm_is enabled "$p" "" "Already enabled" || continue
                 ln -sfn ../plugin/"$p"
+                touch . # to force compilation later
                 __bpm_msg "$p: Enabled"
             done
             )
@@ -262,7 +263,7 @@ unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 # prepare environment to source the compiled plugin load script
 unset -f builtin declare source
 __bpm_loader_declared_variables() {
-    declare -p | sh -c '
+    declare -p | bash -c '
         declare() {
             printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
 # XXX not considering values changes of variables
