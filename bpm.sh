@@ -262,17 +262,26 @@ unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 
 # prepare environment to source the compiled plugin load script
 unset -f builtin declare source
-__bpm_loader_declared_variables() {
-    declare -p | bash -c '
-        declare() {
-            printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
-# XXX not considering values changes of variables
-# "${2//[
-#]/\\n}"
-        }
-        builtin source /dev/stdin
-    ' | sort
-}
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    __bpm_loader_declared_variables() {
+        declare -p | bash -c '
+            declare() {
+                printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
+    # XXX not considering values changes of variables
+    # "${2//[
+    #]/\\n}"
+            }
+            builtin source /dev/stdin
+        ' | sort
+    }
+else # bash < 4's declare -p has a slightly different format
+    __bpm_loader_declared_variables() {
+        (
+        unset -f -- $(declare -F | sed 's/.* -f //')
+        declare -p | sed 's/\([^=]*\)=\(.*\)/	\1	/'
+        ) | sort
+    }
+fi
 __bpm_loader_hijack_source() {
 : ${__bpm_loader_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
 source() {
@@ -285,8 +294,8 @@ source() {
     }
     __bpm_loader_source() {
         unset -f source .  # pause hijacking uses of source/.
-        trap __bpm_loader_preserve_changed_vars RETURN
         builtin source "$@"
+        trap __bpm_loader_preserve_changed_vars RETURN
     }
     __bpm_loader_source "$@"
     trap - RETURN
