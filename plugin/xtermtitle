@@ -38,7 +38,7 @@ bash_plugin_load() {
         # See: http://www.macosxautomation.com/lion/terminal.html
         # See also: /private/etc/bashrc's update_terminal_cwd
         if ${xtermtitle_mac_terminal:-false} ||
-            [[ -z $TMUX && $TERM_PROGRAM = "Apple_Terminal" && ${TERM_PROGRAM_VERSION:-0} -gt 297 ]]; then
+            [[ -z $TMUX && $TERM_PROGRAM = "Apple_Terminal" && ${TERM_PROGRAM_VERSION:-0} > 297 ]]; then
             xtermtitle_mac_terminal=true
             -xtermtitle_mac_terminal_set_url() { printf '\e]7;%s\a' "$1"; }
             -xtermtitle_mac_terminal_update() {
