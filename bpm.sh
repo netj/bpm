@@ -19,7 +19,7 @@
 ################################################################################
 
 BPM=${BASH_SOURCE:-$0}
-BPM_HOME=$(cd $(dirname "$BPM") &>/dev/null; pwd)
+BPM_HOME=$(cd $(dirname "$BPM") >/dev/null; pwd -P)
 BPM_TMPDIR=${BPM_TMPDIR:-$(
         d="${TMPDIR:-/tmp}/bpm-$USER"
         mkdir -p "$d"
@@ -41,7 +41,7 @@ __bpm_list() {
     local where=$1; shift
     (
     mkdir -p "$BPM_HOME"/"$where"
-    cd "$BPM_HOME"/"$where" &>/dev/null
+    cd "$BPM_HOME"/"$where" >/dev/null
     [[ $# -gt 0 ]] || set -- *
     eval command ls "$@" 2>/dev/null
     )
@@ -100,7 +100,7 @@ bpm() {
         enable|on)
             (
             mkdir -p "$BPM_HOME"/enabled
-            cd "$BPM_HOME"/enabled &>/dev/null
+            cd "$BPM_HOME"/enabled >/dev/null
             for p; do
                 __bpm_is plugin "$p" || continue
                 __bpm_is enabled "$p" "" "Already enabled" || continue
@@ -114,7 +114,7 @@ bpm() {
         disable|off)
             (
             mkdir -p "$BPM_HOME"/enabled
-            cd "$BPM_HOME"/enabled &>/dev/null
+            cd "$BPM_HOME"/enabled >/dev/null
             for p; do
                 __bpm_is enabled "$p" "Not enabled" || continue
                 unlink "$p"
@@ -161,7 +161,8 @@ complete -F __bpmcomp bpm
 # compile all enabled plugins
 __bpm_list_enabled_by_deps() {
     (
-    cd "$BPM_HOME"/enabled &>/dev/null
+    [[ -d "$BPM_HOME"/enabled ]] || return 1
+    cd "$BPM_HOME"/enabled >/dev/null
     local latest=$(command ls -tdL . * | head -n 1)
     # echo $latest >&2
     deps="$BPM_TMPDIR"/enabled.deps
@@ -233,6 +234,7 @@ __bpm_compile() {
                     type bash_plugin_login | tail -n +3
                     echo 'fi'
                 fi
+                # TODO parts for interactive non-login shells, and non-interactive shells.
                 echo '}'
                 echo '__bpm_load1'
             } >"$compiled"
@@ -248,9 +250,9 @@ __bpm_compile() {
 
 __bpm_compile_enabled() {
     local script="$BPM_TMPDIR"/compiled.enabled.sh
-    if [[ "$script" -ot "$BPM_HOME"/plugin ||
-          "$script" -ot "$BPM_HOME"/enabled ||
-          "$script" -ot "$BPM" ]]; then
+    if [[ ! "$script" -nt "$BPM_HOME"/plugin ||
+          ! "$script" -nt "$BPM_HOME"/enabled ||
+          ! "$script" -nt "$BPM" ]]; then
         __bpm_info "updating $script" >&2
         __bpm_compile "$script" $(__bpm_list_enabled_by_deps)
     fi
