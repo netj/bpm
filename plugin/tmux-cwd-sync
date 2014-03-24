@@ -9,9 +9,20 @@
 
 bash_plugin_login() {
     if [ -n "$TMUX" ]; then
-        -tmux-sync-default-path() {
-            tmux set default-path "$PWD" |:
-        }
+        if [ x"$(tmux -V)" \< x"tmux 1.9" ]; then
+            -tmux-sync-default-path() {
+                tmux set default-path "$PWD" |:
+            }
+        else
+            # since tmux 1.9, default-path option no longer exists,
+            # so managing TMUX_PWD environment variable instead
+            -tmux-sync-default-path() {
+                tmux set-environment TMUX_PWD "$PWD"
+            }
+            local decl=$(tmux show-environment TMUX_PWD 2>/dev/null | grep -v '^-')
+            [[ -z "$decl" ]] || export "$decl"
+            [[ -z "${TMUX_PWD:-}" || ! -d "$TMUX_PWD" ]] || cd "$TMUX_PWD"
+        fi
         bash_insert_prompt -tmux-sync-default-path
     fi
 }
