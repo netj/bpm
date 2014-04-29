@@ -183,7 +183,7 @@ bash_plugin_login() {
         # with a fresh AFS token to cope with file access problems in the
         # resumed tmux sessions.
         local hasKerberosAndAFS=false
-        [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null || {
+        [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null || ! klist &>/dev/null || {
             hasKerberosAndAFS=true
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         }
