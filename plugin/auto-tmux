@@ -142,6 +142,8 @@ bash_plugin_login() {
         atmux-respawn-windows() {
             local f=${1:-~/.tmux.windows}
             if tmux move-window -t 0; then
+                # make sure tmux-cwd-sync plugin don't get in the way
+                tmux set-environment -u TMUX_PWD
                 # create new windows based on the recorded state
                 if type -- -tmux-cwd-title-update &>/dev/null; then
                     while read -r cwd; do
