@@ -45,41 +45,80 @@ bash_plugin_load() {
     bash_insert_path PATH ~/bin
 }
 
+shopt -s extglob
 bash_plugin_login() {
     # environment variables
     bash_default_env EDITOR vim
     bash_default_env PAGER less
     bash_default_env LESS "-XFRiMW" # --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --ignore-case --LONG-PROMPT --HILITE_UNREAD
+    env_names_ordered() {
+        command printenv -0 | xargs -0 bash -c '
+            for pair; do
+                name=${pair%%=*}
+                echo "$name"
+            done' -- |
+        LC_ALL=C sort --ignore-case
+    }
     env() { # sorted env
-        if [[ $# -eq 0 ]]; then command env | LC_ALL=C sort --ignore-case; else command env "$@"; fi
+        if [[ $# -gt 0 ]]; then
+            command env "$@"
+        else
+            # use printenv -0 to cope with multi-line values as well
+            local name=
+            for name in $(env_names_ordered); do echo "$name=$(printenv "$name")"; done
+        fi
     }
     eenv() { # change env with editor
         local t=$(mktemp -d ${TMPDIR:-/tmp}/eenv.XXXXXX)
         # snapshot the environment
-        if [[ $# -gt 0 ]]; then
-            local patt=$(printf '\|^[^=]*%q[^=]*=' "$@")
-            env | grep -i -- "${patt#\\|}"
-        else
-            env
-        fi | grep -v '^_=' >$t/env
+        local names=$(
+            if [[ $# -gt 0 ]]; then
+                env_names_ordered | grep -iF "$(printf '%s\n' "$@")"
+            else
+                env_names_ordered
+            fi
+        )
+        local name= value=
+        for name in $names; do
+            case $name in
+                # skip some special non-editable environment variables
+                _) continue
+            esac
+            ! declare -F "$name" &>/dev/null || {
+                # XXX skip exported functions
+                echo >&2 "$name: skipping exported function"
+                continue
+            }
+            value=$(printenv "$name")
+            case $value in
+                \$*|+(*[$'\n']*))
+                    #printf "%s=='%s'\n" "$name" "${value//"'"/"'\\\''"}"
+                    value=$(printf %q "$value"$'\n')
+                    value=${value%"\n'"}\'
+            esac
+            echo "$name=$value"
+        done >$t/env
         eenv_varnames() { sed 's/=.*//' | LC_ALL=C sort; }
         eenv_varnames <$t/env >$t/vars.old
-        # open editor for it
-        ${EDITOR:-vim} $t/env
-        # and apply the changes to environment
-        local name= value=
-        while IFS="=" read -r name value; do
-            [ x"${!name}" != x"$value" ] || continue
-            export "$name"="$value"
-            echo "$name=$value"
-        done <$t/env
-        # take care of variable removals
-        eenv_varnames <$t/env >$t/vars.new
-        LC_ALL=C comm -13 $t/vars.new $t/vars.old >$t/vars.unset
-        while read -r name; do
-            unset "$name"
-            echo "unset $name"
-        done <$t/vars.unset
+        # open editor for it and act only when modified
+        if ${EDITOR:-vim} $t/env && [[ $t/env -nt $t/vars.old ]]; then
+            # and apply the changes to environment
+            local name= value=
+            while IFS="=" read -r name value; do
+                # (some values may need to be interpreted)
+                case $value in \$*) eval "value=$value"; esac
+                [ x"${!name}" != x"$value" ] || continue
+                export "$name"="$value"
+                echo "$name=$value"
+            done <$t/env
+            # take care of variable removals
+            eenv_varnames <$t/env >$t/vars.new
+            LC_ALL=C comm -13 $t/vars.new $t/vars.old >$t/vars.unset
+            while read -r name; do
+                unset "$name"
+                echo "unset $name"
+            done <$t/vars.unset
+        fi
         # cleanup
         unset eenv_varnames
         rm -rf $t
