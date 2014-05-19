@@ -45,7 +45,6 @@ bash_plugin_load() {
     bash_insert_path PATH ~/bin
 }
 
-shopt -s extglob
 bash_plugin_login() {
     # environment variables
     bash_default_env EDITOR vim

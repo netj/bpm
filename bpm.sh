@@ -34,6 +34,7 @@ if ${BPM_LOADED:-false}; then
 else
     __bpm_info() { :; }
 fi
+shopt -s extglob
 
 ################################################################################
 
@@ -205,6 +206,7 @@ __bpm_compile() {
     {
         echo '#!/usr/bin/env bash'
         echo '# bash plugins compiled by bpm (https://github.com/netj/bpm)'
+        echo 'shopt -s extglob'
         echo
     } >"$script"
     mkdir -p "$BPM_TMPDIR"/compiled
