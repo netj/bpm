@@ -45,6 +45,7 @@ bash_plugin_login() {
             ! -akrenew-is-ticket-valid || aklog
             if ! -akrenew-pid >/dev/null; then
                 echo 'auto-krenew: launching krenew in background...'
+                AKLOG='tmux has-session && tmux new-window -d aklog || aklog' \
                 krenew -K 60 -i -b -t -p "$_auto_krenew_pidfile"
             fi
         }
