@@ -133,6 +133,10 @@ bash_plugin_login() {
         atmux-record-windows() {
             local f=${1:-~/.tmux.windows}
             # try to save at which dirs panes were
+            # If there's only one window, it's very likely user's trying to respawn windows.
+            # Confirm and make sure we don't overwrite existing sessions.
+            [[ $(tmux lsp -a | wc -l) -gt 1 ]] ||
+                read -p "auto-tmux: There's only one tmux window. Are you sure you want to record?"$'\n'"Press ENTER to continue..."
             # XXX storing working dir only
             # TODO can we remember env, command, args and restore it as well?
             # See: http://stackoverflow.com/a/1727031/390044
