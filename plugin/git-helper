@@ -28,5 +28,5 @@ bash_plugin_login() {
     bash_default_alias gss  "git submodule summary"
     bash_default_alias gsu  "git submodule update --init"
     # launch Vim with fugitive :Gstatus
-    bash_default_alias gg   'vim +Gstatus +only "$PWD"'
+    bash_default_alias gg   '_git_dir=$(git rev-parse --git-dir) && vim "$_git_dir"/index'
 }
