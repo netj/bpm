@@ -18,6 +18,7 @@
 
 ################################################################################
 
+case ${BASH:-} in */bash)
 BPM=${BASH_SOURCE:-$0}
 BPM_HOME=$(cd $(dirname "$BPM") >/dev/null; pwd -P)
 BPM_TMPDIR=${BPM_TMPDIR:-$(
@@ -329,3 +330,4 @@ unset -f __bpm_loader_declared_variables __bpm_loader_hijack_source source .
 
 # finally, pass any arguments to bpm if given to the script
 [[ $# -eq 0 ]] || bpm "$@"
+esac
