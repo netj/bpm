@@ -162,8 +162,8 @@ bash_plugin_login() {
         
         # prepare hooks for prompt, cleanup
         bash_insert_prompt -atmux-poll
-        -atmux_unload() { rm -f "$auto_tmux_link"; }
-        bash_add_unloader -atmux_unload
+        -atmux-unload() { rm -f "$auto_tmux_link"; }
+        bash_add_unloader -atmux-unload
     else
         # working outside tmux,
         # create a environment snapshot for shells inside tmux
@@ -180,8 +180,8 @@ bash_plugin_login() {
         chmod a=,u=rw "$auto_tmux_env"
         auto_tmux_link=$auto_tmux_env atmux-save
         # before exiting, clean it up
-        -atmux_unload() { rm -f "$auto_tmux_env"; }
-        bash_add_unloader -atmux_unload
+        -atmux-unload() { rm -f "$auto_tmux_env"; }
+        bash_add_unloader -atmux-unload
         
         echo "auto-tmux: connection #$conn"
         
@@ -194,7 +194,7 @@ bash_plugin_login() {
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         }
 
-        -atmux_loop() {
+        -atmux-loop() {
         # decide default behavior (to resume or just enter the shell)
         local default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
         # a wrapper for invoking tmux
@@ -229,7 +229,7 @@ bash_plugin_login() {
                     ;;
                 [qQsS]|*) # if any other key was pressed, abort
                     unset tmux_
-                    bash_remove_prompt -atmux_loop
+                    bash_remove_prompt -atmux-loop
                     return
                     ;;
             esac
@@ -238,7 +238,7 @@ bash_plugin_login() {
         done
         }
         # get into auto tmux loop after loading everything (hence, showing prompt)
-        bash_add_prompt -atmux_loop
+        bash_add_prompt -atmux-loop
     fi
 }
 
