@@ -90,7 +90,7 @@ bash_plugin_login() {
         atmux-ls() {
             local c=
             for c in `-atmux-alive`; do
-                echo "= $([ $c = `-atmux-current` ] && echo \#)$c ="
+                echo "= $([[ x"$c" = x"`-atmux-current`" ]] && echo \#)$c ="
                 cat "$auto_tmux_env_root/$c"
             done
         }
