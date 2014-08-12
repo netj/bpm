@@ -174,7 +174,7 @@ bash_plugin_login() {
         # clean up stale environment snapshots first
         -atmux-cleanup
         local conn=$$
-        local auto_tmux_env="$auto_tmux_env_root/$conn"
+        auto_tmux_env="$auto_tmux_env_root/$conn"
         rm -f "$auto_tmux_env"
         touch "$auto_tmux_env"
         chmod a=,u=rw "$auto_tmux_env"
