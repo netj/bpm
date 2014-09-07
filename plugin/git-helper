@@ -6,7 +6,7 @@
 # Requires: bpm.utils
 ################################################################################
 
-bash_plugin_login() {
+bash_plugin_interactive() {
     bash_default_alias g    "git status"
     bash_default_alias gd   "git diff --find-copies-harder"
     bash_default_alias gds  "gd --staged"

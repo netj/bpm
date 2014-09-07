@@ -18,6 +18,7 @@
 # Conflicts: screen
 ################################################################################
 
+# TODO separate login stuffs from interactive
 bash_plugin_login() {
     # we can't do much if tmux is not available
     type tmux &>/dev/null || return

@@ -227,17 +227,27 @@ __bpm_compile() {
                 echo "# $bash_plugin"
                 echo '__bpm_load1() {'
                 echo 'local bash_plugin='\'"$bash_plugin"\'''
-                # parts for all shells
+                # load for all shells: {non-,}interactive-{non-,}login
                 if type bash_plugin_load &>/dev/null; then
                     type bash_plugin_load | tail -n +3
                 fi
-                # parts for interactive login shells
-                if type bash_plugin_login &>/dev/null; then
-                    echo 'if ! [[ ${-//i/} = $- ]] && shopt -q login_shell; then'
-                    type bash_plugin_login | tail -n +3
+                # load for interactive shells, optionally login as well
+                has_login=true      ; type bash_plugin_login       &>/dev/null || has_login=false
+                has_interactive=true; type bash_plugin_interactive &>/dev/null || has_interactive=false
+                if $has_interactive || $has_login; then
+                    echo 'if [[ ${-//i/} != $- ]]; then'
+                    if $has_interactive; then
+                        # interactive shells, regardless of login nor not
+                        type bash_plugin_interactive | tail -n +3
+                    fi
+                    if $has_login; then
+                        # interactive login shells
+                        echo 'if shopt -q login_shell; then'
+                        type bash_plugin_login | tail -n +3
+                        echo 'fi'
+                    fi
                     echo 'fi'
                 fi
-                # TODO parts for interactive non-login shells, and non-interactive shells.
                 echo '}'
                 echo '__bpm_load1'
             } >"$compiled"

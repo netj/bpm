@@ -18,7 +18,7 @@
 # Requires: bpm.utils bpm.events environment
 ################################################################################
 
-bash_plugin_load() {
+bash_plugin_interactive() {
     _xtermtitle_postfix=
     bash_default xtermtitle_label ""
     bash_default xtermtitle_mac_terminal ""

@@ -171,8 +171,8 @@ $date_part\[$no_color\]\
     ! ${prompt_subshells:-false} || -prompt-setup
 }
 
-bash_plugin_login() {
-    # automatically setup prompt on login shells
+bash_plugin_interactive() {
+    # automatically setup prompt on interactive shells
     -prompt-setup
 }
 

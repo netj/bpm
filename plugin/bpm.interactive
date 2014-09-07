@@ -6,7 +6,7 @@
 ################################################################################
 shopt -s extglob
 
-bash_plugin_load() {
+bash_plugin_interactive() {
 
 # bash_getkey will read a key among the ones specified in the prompt.  Each key
 # should be lower-cased and surrounded by square brackets.  If there's an

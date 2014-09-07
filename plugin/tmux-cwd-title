@@ -7,7 +7,7 @@
 # Requires: bpm.events
 ################################################################################
 
-bash_plugin_login() {
+bash_plugin_interactive() {
     if [ -n "$TMUX" ]; then
         -tmux-cwd-title-update() {
             local title="${PWD##*/}"

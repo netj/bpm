@@ -2,7 +2,7 @@
 # bpm bridge for Maven Bash Auto Completion
 # Requires: bash_completion
 
-bash_plugin_login() {
+bash_plugin_interactive() {
     local repoPath="$BPM_HOME"/extern/maven-bash-completion
     if ! [ -e "$repoPath"/.git ]; then
         mkdir -p "$repoPath"

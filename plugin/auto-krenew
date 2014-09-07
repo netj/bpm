@@ -9,6 +9,7 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-08
 
+# TODO separate login stuffs from interactive
 bash_plugin_login() {
     if type krenew &>/dev/null && [ -t 0 -a -t 1 ]; then
         _auto_krenew_dir="${TMPDIR:-/tmp}/auto-krenew.$USER"

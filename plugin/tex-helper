@@ -6,7 +6,7 @@
 # Requires: bpm.utils
 ################################################################################
 
-bash_plugin_login() {
+bash_plugin_interactive() {
     # latexmk is really nice for compiling tex, a reasonable default will make it better
     ! type latexmk &>/dev/null ||
     latexmk() {

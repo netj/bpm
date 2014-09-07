@@ -8,6 +8,17 @@
 
 bash_plugin_load() {
 
+## hooks for EXIT
+ONEXIT_COMMAND=
+bash_add_unloader()    { bash_add_command    ONEXIT_COMMAND "$@"; }
+bash_remove_unloader() { bash_remove_command ONEXIT_COMMAND "$@"; }
+bash_insert_unloader() { bash_insert_command ONEXIT_COMMAND "$@"; }
+trap 'eval -- "$ONEXIT_COMMAND"' EXIT
+
+}
+
+bash_plugin_interactive() {
+
 ## hooks for $PWD change (chpwd a la zsh's)
 CHPWD_COMMAND= _chpwd_lastpwd=
 bash_add_chpwd()    { bash_add_command    CHPWD_COMMAND "$@"; }
@@ -29,13 +40,5 @@ bash_insert_prompt() {
     bash_remove_command PROMPT_COMMAND      -chpwd-detect
     bash_insert_command PROMPT_COMMAND "$@" -chpwd-detect
 }
-
-
-## hooks for EXIT
-ONEXIT_COMMAND=
-bash_add_unloader()    { bash_add_command    ONEXIT_COMMAND "$@"; }
-bash_remove_unloader() { bash_remove_command ONEXIT_COMMAND "$@"; }
-bash_insert_unloader() { bash_insert_command ONEXIT_COMMAND "$@"; }
-trap 'eval -- "$ONEXIT_COMMAND"' EXIT
 
 }

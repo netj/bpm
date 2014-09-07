@@ -6,7 +6,7 @@
 # Created: 2012-09-01
 # Derived-from: http://stackoverflow.com/a/1793178/390044
 
-bash_plugin_load() {
+bash_plugin_interactive() {
     local namespace=alias_completion::
     # alias_completion::wrap_alias takes three arguments:
     # $1: The name of the alias
