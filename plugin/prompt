@@ -88,14 +88,17 @@ bash_plugin_load() {
     fi
 
     # sketch PS1
-    local PS1_plain="($user_plain:""?0)--""(""&$date_plain)"
+    local prompt_shlvl_part=; [[ $SHLVL -le 1 ]] || prompt_shlvl_part=$SHLVL
+    local PS1_plain="($user_plain:"")--""(0?""&${prompt_shlvl_part:+$prompt_shlvl_part\$}$date_plain)"
     prompt_min_width=`prompt_takes_width "$PS1_plain"`
 
     # prompt_flexible_part update codes
     prompt_fill_part=
     prompt_pwd_part=
     prompt_pwd=
+    prompt_exitstatus_part=
     prompt_jobs_part=
+    prompt_jobs_part_is_empty=
     prompt_jobs=
     prompt_columns=
     prompt_update() {
@@ -144,7 +147,8 @@ bash_plugin_load() {
                 prompt_fill_part="${prompt_fill_part:0:$fillsize}"
             fi
             prompt_pwd_part=$pwd
-            prompt_jobs_part=$nrjobs
+            prompt_jobs_part= prompt_jobs_part_is_empty=true
+            [[ $nrjobs -le 0 ]] || prompt_jobs_part=$nrjobs prompt_jobs_part_is_empty=
         fi
     }
     # let prompt_update get regularly called by adding to $PROMPT_COMMAND
@@ -160,9 +164,14 @@ $user_part\
 \[$red\]"'$prompt_host'"\[$no_color\]\
 :\
 \[$yellow\]"'$prompt_pwd_part'"\[$no_color\]\
-?\[$cyan\]"'$?'"\[$no_color\]\
-)"'$prompt_fill_part''${prompt_filler:0:$((3-${#?}))}'"(\
-\[$green\]"'$prompt_jobs_part'"\[$no_color\]&\
+)"\
+'$prompt_fill_part'\
+'${prompt_filler:0:$((3-${#?}))}'\
+'${prompt_jobs_part_is_empty:+${prompt_filler:0:2}}'\
+"(\
+\[$cyan\]"'$?'"\[$no_color\]?\
+\${prompt_jobs_part:+\[$green\]\$prompt_jobs_part\[$no_color\]&}\
+${prompt_shlvl_part:+\[$magenta\]$prompt_shlvl_part\[$no_color\]$}\
 $date_part\[$no_color\]\
 )\n\\$ "
     }
