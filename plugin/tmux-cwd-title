@@ -12,10 +12,10 @@ bash_plugin_interactive() {
         -tmux-cwd-title-update() {
             local title="${PWD##*/}"
             local prevtitle=$(tmux list-pane -F "#{window_name}" | head -n 1)
-            [[ $prevtitle = ${OLDPWD##*/} || $prevtitle = bash && $(
+            [[ $prevtitle = ${OLDPWD##*/} || $prevtitle = bash && $({
                     tmux show-window-options    | grep automatic-rename ||
                     tmux show-window-options -g | grep automatic-rename
-                ) = "automatic-rename on" ]] ||
+                } | head -1) = "automatic-rename on" ]] ||
                 return
             case $PWD in
                 "$HOME") # home

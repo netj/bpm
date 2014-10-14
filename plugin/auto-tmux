@@ -136,27 +136,35 @@ bash_plugin_login() {
             # try to save at which dirs panes were
             # If there's only one window, it's very likely user's trying to respawn windows.
             # Confirm and make sure we don't overwrite existing sessions.
-            [[ $(tmux lsp -a | wc -l) -gt 1 ]] ||
+            [[ $(tmux lsp -s | wc -l) -gt 1 ]] ||
                 read -p "auto-tmux: There's only one tmux window. Are you sure you want to record?"$'\n'"Press ENTER to continue..."
             # XXX storing working dir only
             # TODO can we remember env, command, args and restore it as well?
             # See: http://stackoverflow.com/a/1727031/390044
-            lsof -a -p "$(tmux lsp -a -F'#{pane_pid}' | tr '\n' ,)" -d cwd -Fn |
-            sed -n '/^n/ s/^n//p' >"$f"
+            tmux lsp -s -F'#{window_index} #{pane_pid}' |
+            while read -r index pid; do
+                lsof -a -p "$pid" -d cwd -Fn |
+                sed -n '/^n/ s/^n//p' |
+                sed "s/^/$index /"
+            done >"$f"
         }
         atmux-respawn-windows() {
             local f=${1:-~/.tmux.windows}
             if tmux move-window -t 0; then
                 # make sure tmux-cwd-sync plugin don't get in the way
-                tmux set-environment -u TMUX_PWD
+                tmux set-environment TMUX_RESPAWNING true
                 # create new windows based on the recorded state
-                if type -- -tmux-cwd-title-update &>/dev/null; then
-                    while read -r cwd; do
-                        tmux new-window -c "$cwd" -n "${cwd##*/}"
-                    done <"$f"
-                else
-                    xargs -L1 <"$f" tmux new-window -c
-                fi
+                local index= cwd=
+                while read -r index cwd; do
+                    # and passing the right options to tmux new-window
+                    set --; ! type -- -tmux-cwd-title-update &>/dev/null || set -- -n "${cwd##*/}"
+                    tmux new-window -t :"$index" -c "$cwd" "$@" ||
+                        # try splitting if window already exists
+                        tmux split-window -t :"$index" -c "$cwd"
+                done <"$f"
+                # mark respawning as done after a while (XXX 10s may not make
+                # sense in some cases, but works fine most of the time)
+                (sleep 10; tmux set-environment -u TMUX_RESPAWNING) & disown
                 exit
             fi
         }
