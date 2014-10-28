@@ -278,19 +278,21 @@ unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 # prepare environment to source the compiled plugin load script
 unset -f builtin declare source
 if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    __bpm_loader_declared_variables() {
+    __bpm_loader_defined_variables() {
         declare -p | bash -c '
             declare() {
+                case $2 in *=*)
                 printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
     # XXX not considering values changes of variables
     # "${2//[
     #]/\\n}"
+                esac
             }
             builtin source /dev/stdin
         ' | sort
     }
 else # bash < 4's declare -p has a slightly different format
-    __bpm_loader_declared_variables() {
+    __bpm_loader_defined_variables() {
         (
         unset -f -- $(declare -F | sed 's/.* -f //')
         declare -p | sed 's/\([^=]*\)=\(.*\)/	\1	/'
@@ -301,9 +303,9 @@ __bpm_loader_hijack_source() {
 : ${__bpm_loader_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
 source() {
     # track which variables have changed during source
-    __bpm_loader_declared_variables >"$__bpm_loader_tmpdir"/vars.before
+    __bpm_loader_defined_variables >"$__bpm_loader_tmpdir"/vars.before
     __bpm_loader_preserve_changed_vars() {
-        declare -p $(__bpm_loader_declared_variables |
+        declare -p $(__bpm_loader_defined_variables |
             comm -13 "$__bpm_loader_tmpdir"/vars.before - |
             cut -f2) >"$__bpm_loader_tmpdir"/vars.sourced
     }
@@ -334,7 +336,7 @@ BPM_LOADED=true
 # and restore the environment
 rm -rf -- "$__bpm_loader_tmpdir"
 unset -v __bpm_compiled __bpm_loader_tmpdir
-unset -f __bpm_loader_declared_variables __bpm_loader_hijack_source source .
+unset -f __bpm_loader_defined_variables __bpm_loader_hijack_source source .
 
 ################################################################################
 
