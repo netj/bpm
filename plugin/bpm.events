@@ -33,7 +33,7 @@ bash_insert_chpwd() { bash_insert_command CHPWD_COMMAND "$@"; }
 
 
 ## hooks for prompt change (PROMPT_COMMAND)
-PROMPT_COMMAND="-chpwd-detect"
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND ;} -chpwd-detect"
 bash_add_prompt()    { bash_add_command    PROMPT_COMMAND "$@"; }
 bash_remove_prompt() { bash_remove_command PROMPT_COMMAND "$@"; }
 bash_insert_prompt() {
