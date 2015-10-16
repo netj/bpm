@@ -58,7 +58,8 @@ bash_plugin_load() {
     # a hack to measure how many columns given string takes
     prompt_takes_width() {
         local s=$1
-        # adjust the length of some characters
+        [[ -z ${s//[[:ascii:]]/} ]] ||
+        # adjust the length of some non-ASCII characters
         # Most CJK characters are double the length of western/Latin ones.
         # TODO However, I would like to know how to avoid listing all the
         # Unicode block names here:
@@ -78,7 +79,7 @@ bash_plugin_load() {
     local user_part=${user:+"\[$blue\]$user\[$no_color\]@"}
 
     # date part
-    local date_plain="`date '+%Y-%m-%d%a%T'`"
+    local date_plain="$(date '+%Y-%m-%d%a%T')"
     local date_part="\D{$blue%Y-%m-%d$magenta%a}$light_yellow\t"
     if ! [ ${BASH_VERSINFO[0]} -gt 2 \
         -o ${BASH_VERSINFO[0]} == 2 -a ! "${BASH_VERSINFO[1]}" \< "05b" ]; then

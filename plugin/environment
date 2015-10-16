@@ -21,19 +21,19 @@ bash_plugin_load() {
             export MANPATH
             # XXX and since path_helper messes up with your PATH, let's preserve it
             local PATH_orig=$PATH
-            eval `/usr/libexec/path_helper -s`
+            eval "$(/usr/libexec/path_helper -s)"
             PATH=$PATH_orig
             # some stuffs get installed on /usr/local
             bash_insert_path PATH /usr/local/sbin /usr/local/bin
             bash_insert_path MANPATH /usr/local/man /usr/local/share/man
             if type brew &>/dev/null; then
                 # Prefer Homebrew (http://mxcl.github.com/homebrew/)
-                local brewPrefix=`brew --prefix`
-                bash_insert_path PATH "$brewPrefix"/sbin "$brewPrefix"/bin
-                bash_insert_path MANPATH "$brewPrefix"/man "$brewPrefix"/share/man
+                local brew_prefix=${brew_prefix:-$(brew --prefix)}
+                bash_insert_path PATH "$brew_prefix"/sbin "$brew_prefix"/bin
+                bash_insert_path MANPATH "$brew_prefix"/man "$brew_prefix"/share/man
                 # prefer GNU coreutils to BSD ones
-                bash_insert_path PATH "$brewPrefix/opt/coreutils/libexec/gnubin"
-                bash_insert_path MANPATH "$brewPrefix/opt/coreutils/libexec/gnuman"
+                bash_insert_path PATH "$brew_prefix/opt/coreutils/libexec/gnubin"
+                bash_insert_path MANPATH "$brew_prefix/opt/coreutils/libexec/gnuman"
             elif [ -x /opt/local/bin/port ]; then
                 # Paths for MacPorts (http://www.macports.org/)
                 bash_insert_path PATH /opt/local/sbin /opt/local/libexec/gnubin /opt/local/bin
