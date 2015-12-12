@@ -38,7 +38,7 @@ bash_plugin_interactive() {
         # See: http://www.macosxautomation.com/lion/terminal.html
         # See also: /private/etc/bashrc's update_terminal_cwd
         if ${xtermtitle_mac_terminal:-false} ||
-            [[ -z $TMUX && $TERM_PROGRAM = "Apple_Terminal" && ${TERM_PROGRAM_VERSION:-0} -gt 297 ]]; then
+            [[ -z $TMUX && $TERM_PROGRAM = "Apple_Terminal" && ${TERM_PROGRAM_VERSION:-0} \>= 297 ]]; then
             xtermtitle_mac_terminal=true
             -xtermtitle_mac_terminal_clear_document_url() {
                 # make sure the document URL (OSC sequence with Ps = 6) is cleared, or the
