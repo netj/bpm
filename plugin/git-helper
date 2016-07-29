@@ -27,6 +27,7 @@ bash_plugin_interactive() {
     bash_default_alias gRI  "gR -i"
     bash_default_alias gss  "git submodule summary"
     bash_default_alias gsu  "git submodule update --init"
+    bash_default_alias gh   "hub browse"
     # launch Vim with fugitive :Gstatus
     bash_default_alias gg   '_git_dir=$(git rev-parse --git-dir) && vim "$_git_dir"/index'
 }
