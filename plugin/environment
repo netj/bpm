@@ -171,14 +171,19 @@ bash_plugin_interactive() {
     bash_default_alias dirs "dirs -p"
     # keep history clean and long enough
     # See: http://briancarper.net/blog/248/
-    bash_add_prompt "history -a"
-    bash_default HISTSIZE     1024
-    bash_default HISTFILESIZE 102400
-    bash_default HISTTIMEFORMAT '%m-%d %T  '
+    # See: https://sanctum.geek.nz/arabesque/better-bash-history/
+    [[ -n ${SHELL_SESSION_DID_INIT:-} ]] ||
+        # unless /etc/bashrc_Apple_Terminal on macOS is managing the history
+        bash_add_prompt "history -a" # immediately append history to file
+    #shopt -s cmdhist # keep multiline as a single history entry  # already done above
+    bash_default HISTSIZE     1048576
+    bash_default HISTFILESIZE 1048576
+    bash_default HISTTIMEFORMAT '%F %T  '
     bash_default HISTCONTROL erasedups
     bash_add_with_separator : HISTIGNORE \
         "&" "[bf]g" cd .. - \
         "l[salt]" lal llt lalt \
+        history \
         #
     # ignore some annoying files when completing
     bash_add_with_separator : FIGNORE \
