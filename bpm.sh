@@ -267,7 +267,8 @@ __bpm_compile_enabled() {
           ! "$script" -nt "$BPM_HOME"/enabled ||
           ! "$script" -nt "$BPM" ]]; then
         __bpm_info "updating $script" >&2
-        __bpm_compile "$script" $(__bpm_list_enabled_by_deps)
+        __bpm_compile "$script.$$" $(__bpm_list_enabled_by_deps)
+        mv -f "$script.$$" "$script"
     fi
     echo "$script"
 }
