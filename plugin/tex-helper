@@ -19,7 +19,7 @@ bash_plugin_interactive() {
         fi
         # default options for latexmk
         if [[ ${1:-} != -* ]]; then
-            set -- -pvc -pdf -latexoption=-synctex=1 "$@"
+            set -- -pvc -pdf -latexoption="-synctex=1 -interaction nonstopmode -halt-on-error -file-line-error" "$@"
             echo >&2 "+ latexmk $*"
         fi
         command latexmk "$@"
