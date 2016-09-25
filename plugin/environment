@@ -137,6 +137,20 @@ bash_plugin_interactive() {
     else
         bash_default_alias .. "cd .."
     fi
+    # smarter cd that accepts path to files not just dirs
+    cd() {
+        local d= args=; args=()
+        for d; do
+            case $d in
+                -*) # passthru options
+                    ;;
+                *) # use dirname of non-directories
+                    [[ ! -e "$d" || -d "$d" ]] || d=$(dirname "$d")
+            esac
+            args+=("$d")
+        done
+        builtin cd "${args[@]}"
+    }
     local uname=`uname`
     # ls on several platforms
     local ls_o=
