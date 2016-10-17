@@ -280,7 +280,9 @@ unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 unset -f builtin declare source
 if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
     __bpm_loader_defined_variables() {
-        declare -p | bash -c '
+        declare -p |
+        grep -v '^declare -ar BASH_VERSINFO=' | # exclude a read-only array that makes noise since bash >= 4.4
+        bash -c '
             declare() {
                 case $2 in *=*)
                 printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
