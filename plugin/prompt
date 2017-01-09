@@ -6,6 +6,7 @@
 # Requires: bpm.utils bpm.events environment
 ################################################################################
 
+shopt -s extglob
 bash_plugin_load() {
     -prompt-setup() {
     ###############################################################################
@@ -53,7 +54,28 @@ bash_plugin_load() {
 
     bash_default prompt_filler "----------------------------------------"
     bash_default prompt_user "${LOGNAME:-$USER}"
-    bash_default prompt_host "${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}"
+    _find_prompt_host() {
+        local domain= host=${1:-$HOSTNAME}
+        if [[ -n "${prompt_domain:-}" ]]; then
+            domain=$prompt_domain
+            case $prompt_domain in .*) ;; *) domain=".$prompt_domain";; esac
+        else # guess $prompt_domain unless explicitly set
+            case $host in
+                (+([0-9]).+([0-9]).+([0-9]).+([0-9]))
+                    # do not curtail IPv4 addresses
+                    domain= ;;
+                *.corp.*)
+                    # try to recognize corp.* names
+                    domain=".corp.${host#*.corp.}" ;;
+                *.local)
+                    domain=.local ;;
+                *) # otherwise assume other than the first component is the domain
+                    domain=".${host#*.}"
+            esac
+        fi
+        echo ${host%$domain}
+    }
+    bash_default prompt_host "$(_find_prompt_host "$HOSTNAME")"
 
     # a hack to measure how many columns given string takes
     prompt_takes_width() {
@@ -117,8 +139,8 @@ bash_plugin_load() {
             prompt_pwd=$PWD
             prompt_jobs=$nrjobs
             # hostname seldomly changes
-            HOSTNAME=`hostname -f 2>/dev/null || hostname`
-            prompt_host=${HOSTNAME%.${prompt_domain:-${HOSTNAME#*.}}}
+            HOSTNAME=$(hostname -f 2>/dev/null || hostname)
+            prompt_host=$(_find_prompt_host "$HOSTNAME")
             local pwd=${PWD/#$HOME/\~}
             local changing="$prompt_host$pwd$nrjobs"
             local fillsize=$(($nrcolumns-$prompt_min_width-`prompt_takes_width "$changing"`))
