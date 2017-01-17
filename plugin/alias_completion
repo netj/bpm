@@ -25,6 +25,11 @@ bash_plugin_interactive() {
 
         # The completion currently being used for the aliased command.
         local completion=$(complete -p $aliased_command 2>/dev/null)
+        if [[ -z $completion ]] && type _completion_loader &>/dev/null; then
+            # cope with bash-completion 2 lazy loading
+            _completion_loader $aliased_command
+            completion=$(complete -p $aliased_command 2>/dev/null)
+        fi
 
         # Only a completer based on a function can be wrapped so look for -F
         # in the current completion. This check will also catch commands
