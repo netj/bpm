@@ -38,6 +38,7 @@ bash_plugin_login() {
     atmux-save() {
         [ -f "$auto_tmux_link" ] || return
         chmod +w "$auto_tmux_link"
+        { echo "# Saved: $(date +%FT%T)"
         local n=
         for n in SSH_CLIENT SSH_CONNECTION SSH_TTY \
             SSH_AUTH_SOCK SSH_AGENT_PID \
@@ -49,7 +50,8 @@ bash_plugin_login() {
             else
                 echo "unset $n"
             fi
-        done >"$auto_tmux_link" 2>/dev/null
+        done
+        } >"$auto_tmux_link" 2>/dev/null
         chmod a-w "$auto_tmux_link"
     }
     -atmux-all() {
