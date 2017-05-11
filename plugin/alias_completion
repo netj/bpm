@@ -24,11 +24,11 @@ bash_plugin_interactive() {
         local alias_definition=$1; shift
 
         # The completion currently being used for the aliased command.
-        local completion=$(complete -p -- $aliased_command 2>/dev/null)
+        local completion=$(complete -p $aliased_command 2>/dev/null)
         if [[ -z $completion ]] && type _completion_loader &>/dev/null; then
             # cope with bash-completion 2 lazy loading
-            _completion_loader -- $aliased_command
-            completion=$(complete -p -- $aliased_command 2>/dev/null)
+            _completion_loader $aliased_command
+            completion=$(complete -p $aliased_command 2>/dev/null)
         fi
 
         # Only a completer based on a function can be wrapped so look for -F
@@ -77,16 +77,16 @@ bash_plugin_interactive() {
 
     # For each defined alias, extract the necessary elements and use them
     # to call wrap_alias.
-    eval "`
-    alias -p | grep -v '[";|&]' |
-    sed -e 's/alias \([^=][^=]*\)='\''\(.*\)'\''/\1 \2/' |
-    while read shorthand definition; do
-        eval "set -- $definition"
-        while true; do
-            command=$1; shift
-            case $command in *=*) ;; *) break;; esac
+    eval "$(
+        alias -p | grep -v '[";|&]' |
+        sed -e 's/alias -- /alias /; s/^alias \([^=][^=]*\)='\''\(.*\)'\''/\1 \2/' |
+        while read shorthand definition; do
+            eval "set -- $definition"
+            while true; do
+                command=$1; shift
+                case $command in (*=*) ;; (*) break;; esac
+            done
+            printf '%q ' ${namespace}wrap_alias "$shorthand" "$command" "$definition"; echo
         done
-        printf '%q ' ${namespace}wrap_alias "$shorthand" "$command" "$definition"; echo
-    done
-    `"
+    )"
 }
