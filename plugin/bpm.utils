@@ -149,6 +149,7 @@ bash_insert_path() { bash_remove_path "$@"; bash_insert_path_if_not "$@"; }
     eval -- "shopt -s extglob
         $1=\${$1//*( );*( )/;}
         $1=\${$1//;;/;}
+        $1=\${$1//; ;/;}
         "
 }
 bash_add_command_if_not() {
