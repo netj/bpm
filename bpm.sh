@@ -263,6 +263,14 @@ __bpm_compile() {
 
 __bpm_compile_enabled() {
     local script="$BPM_TMPDIR"/compiled.enabled.sh
+    # create a critical section to have only one compilation at a time
+    ( set -o noclobber
+    until (ps -o pid=,command= -p $$ >"$script".lock) 2>/dev/null; do
+        pid=$(awk '{print $1}' <"$script".lock)
+        [[ $(ps -o pid=,command= -p $pid) != $(cat "$script".lock) ]] || continue
+        kill -TERM $pid
+        rm -f "$script".lock
+    done)
     if [[ ! "$script" -nt "$BPM_HOME"/plugin ||
           ! "$script" -nt "$BPM_HOME"/enabled ||
           ! "$script" -nt "$BPM" ]]; then
@@ -270,6 +278,7 @@ __bpm_compile_enabled() {
         __bpm_compile "$script.$$" $(__bpm_list_enabled_by_deps)
         mv -f "$script.$$" "$script"
     fi
+    rm -f "$script".lock
     echo "$script"
 }
 
