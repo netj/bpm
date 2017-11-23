@@ -265,12 +265,12 @@ __bpm_compile_enabled() {
     local script="$BPM_TMPDIR"/compiled.enabled.sh
     # create a critical section to have only one compilation at a time
     ( set -o noclobber
-    until (ps -o pid=,command= -p $$ >"$script".lock) 2>/dev/null; do
+    until (ps -o pid=,command= -p $$ >"$script".lock); do
         pid=$(awk '{print $1}' <"$script".lock)
-        [[ $(ps -o pid=,command= -p $pid) != $(cat "$script".lock) ]] || continue
-        kill -TERM $pid
+        [[ -z "$pid" || $(ps -o pid=,command= -p "$pid") != $(cat "$script".lock) ]] || continue
+        [[ -z "$pid" ]] || kill -TERM "$pid" || true
         rm -f "$script".lock
-    done)
+    done) 2>/dev/null
     if [[ ! "$script" -nt "$BPM_HOME"/plugin ||
           ! "$script" -nt "$BPM_HOME"/enabled ||
           ! "$script" -nt "$BPM" ]]; then
