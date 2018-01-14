@@ -43,13 +43,23 @@ bash_plugin_interactive() {
         esac
         commit=$(git rev-parse HEAD)
         branch=$(git symbolic-ref --short HEAD)
-        # TODO use a dedicated tether branch?
-        git push -f "$host:$dir" HEAD
-        git diff HEAD | ssh $host "
+        branch_tethered="$branch.TETHERED"  # using a dedicated branch
+        git push -f "$host:$dir" HEAD:"$branch_tethered" || {
+            ssh "$host" "
+                set -eux
+                mkdir -p $(printf %q "$dir")
+                cd $(printf %q "$dir")
+                [[ -e .git ]] || git init
+            "
+            git push -f "$host:$dir" HEAD:"$branch_tethered"
+        }
+        git diff HEAD | ssh "$host" "
             set -eux
             cd $(printf %q "$dir")
-            # TODO git stash any outstanding changes?
-            git checkout -f $(printf %q "$branch")
+            branch_tethered=$(printf %q "$branch_tethered")
+            # preserve any outstanding/untethered changes
+            git diff --quiet --exit-code || [[ \$(git symbolic-ref --short HEAD) = \$branch_tethered ]] || git stash
+            git checkout -f \$branch_tethered --
             git reset --hard $commit
             $([[ $(git diff HEAD | wc -l) -eq 0 ]] || echo "
             git apply
