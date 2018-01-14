@@ -35,7 +35,7 @@ bash_plugin_interactive() {
     # a handy way to patch remote
     git-tether-remote() {
         (
-        set -xeuo pipefail
+        set -euo pipefail
         hostpath=$1; shift
         case $hostpath in
             (*:*) host=${hostpath%%:*} dir=${hostpath#*:};;
@@ -43,28 +43,35 @@ bash_plugin_interactive() {
         esac
         commit=$(git rev-parse HEAD)
         branch=$(git symbolic-ref --short HEAD)
-        branch_tethered="$branch.TETHERED"  # using a dedicated branch
-        git push -f "$host:$dir" HEAD:"$branch_tethered" || {
+        git push -f "$host:$dir" HEAD:"$branch" || {
             ssh "$host" "
                 set -eux
                 mkdir -p $(printf %q "$dir")
                 cd $(printf %q "$dir")
                 [[ -e .git ]] || git init
             "
-            git push -f "$host:$dir" HEAD:"$branch_tethered"
+            git push -f "$host:$dir" HEAD:"$branch"
         }
         git diff HEAD | ssh "$host" "
-            set -eux
+            set -eu
+            branch=$(printf %q "$branch")
+            commit=$(printf %q "$commit")
             cd $(printf %q "$dir")
-            branch_tethered=$(printf %q "$branch_tethered")
+            # reverse any previous patch for tethering
+            if [[ -e .git/tethered.patch ]]; then
+                git apply -R <.git/tethered.patch || git stash
+                mv .git/tethered.patch{,~}
+            fi
+            # and keep a copy of the current patch
+            cat >.git/tethered.patch
             # preserve any outstanding/untethered changes
-            git diff --quiet --exit-code || [[ \$(git symbolic-ref --short HEAD) = \$branch_tethered ]] || git stash
-            git checkout -f \$branch_tethered --
-            git reset --hard $commit
-            $([[ $(git diff HEAD | wc -l) -eq 0 ]] || echo "
-            git apply
-            git diff --stat --color
-            ")"
+            git diff --quiet --exit-code || git stash
+            # make sure we're on the tethered branch and commit
+            [[ \$(git symbolic-ref --short HEAD) = \$branch ]] || git checkout -f \$branch --
+            git reset --hard \$commit
+            # with the same outstanding changes on top of the current commit
+            ! [[ -s .git/tethered.patch ]] || git apply --apply --stat <.git/tethered.patch
+            "
         )
     }
     bash_default_alias gt git-tether-remote
