@@ -32,6 +32,11 @@ bash_plugin_interactive() {
     # launch Vim with fugitive :Gstatus
     bash_default_alias gg   '_git_dir=$(git rev-parse --git-dir) && vim "$_git_dir"/index'
 
+    bash_default_alias gt git-tether-remote
+
+}
+
+bash_plugin_load() {
     # a handy way to patch remote
     git-tether-remote() {
         (
@@ -43,7 +48,7 @@ bash_plugin_interactive() {
         esac
         commit=$(git rev-parse HEAD)
         branch=$(git symbolic-ref --short HEAD)
-        git push -f "$host:$dir" HEAD:"$branch" || {
+        git push -q -f "$host:$dir" HEAD:"$branch" || {
             ssh "$host" "
                 set -eux
                 mkdir -p $(printf %q "$dir")
@@ -74,6 +79,4 @@ bash_plugin_interactive() {
             "
         )
     }
-    bash_default_alias gt git-tether-remote
-
 }
