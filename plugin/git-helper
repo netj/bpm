@@ -24,6 +24,7 @@ bash_plugin_interactive() {
     bash_default_alias gP   "git push"
     bash_default_alias gr   "git remote -v"
     bash_default_alias gru  "git remote update"
+    bash_default_alias grup "git remote update --prune"
     bash_default_alias gR   "git rebase"
     bash_default_alias gRI  "gR -i"
     bash_default_alias gss  "git submodule summary"
