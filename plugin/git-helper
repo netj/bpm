@@ -35,6 +35,12 @@ bash_plugin_interactive() {
 
     #bash_default_alias gt git-tether-remote  # XXX use: github.com/netj/remocon
 
+    bash_default_alias gsp "git subrepo -v pull"
+    bash_default_alias gsP "git subrepo -v push"
+    bash_default_alias gsb "git subrepo -v branch"
+    bash_default_alias gsC "git subrepo -v commit"
+    bash_default_alias gsc "git subrepo -v clean"
+
 }
 
 bash_plugin_load() {
