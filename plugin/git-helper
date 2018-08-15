@@ -22,6 +22,8 @@ bash_plugin_interactive() {
     bash_default_alias gCA  "gC --amend"
     bash_default_alias gp   "git pull"
     bash_default_alias gP   "git push"
+    bash_default_alias gf   "git fetch"
+    bash_default_alias gfp  "gf --prune"
     bash_default_alias gr   "git remote -v"
     bash_default_alias gru  "git remote update"
     bash_default_alias grup "git remote update --prune"
