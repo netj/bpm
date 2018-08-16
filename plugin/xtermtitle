@@ -25,8 +25,8 @@ bash_plugin_interactive() {
     # xterm's dynamic title for some terminal types
     case $TERM in
         xterm* | cygwin* | screen*)
-        if [ -n "$TMUX" -o -n "$STY" ]; then
-            # in tmux or screen we need not much details
+        if [[ -n "$TMUX" || -n "$STY" || "$TERM_PROGRAM" = "Apple_Terminal" ]]; then
+            # in tmux or screen or local Terminal.app we need not much details
             _xtermtitle_postfix=
         else
             # plain terminal
