@@ -139,7 +139,7 @@ __bpmcomp() {
     local cur prev
     COMPREPLY=()
     _get_comp_words_by_ref cur prev
-    if [[ ${#COMP_WORDS[@]} > 2 ]]; then
+    if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
         case ${COMP_WORDS[1]} in
             find|info)
                 COMPREPLY=($(compgen -W "$(bpm find)" -- "$cur"))
