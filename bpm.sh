@@ -20,7 +20,7 @@
 
 case ${BASH:-} in */bash)
 BPM=${BASH_SOURCE:-$0}
-BPM_HOME=$(cd $(dirname "$BPM") >/dev/null; pwd -P)
+BPM_HOME=$(cd "$(dirname "$BPM")" >/dev/null; pwd -P)
 BPM_TMPDIR=${BPM_TMPDIR:-$(
         d="${TMPDIR:-/tmp}/bpm-${USER:-$(id -un)}"
         mkdir -p "$d"
