@@ -35,7 +35,7 @@ if ${BPM_LOADED:-false}; then
 else
     __bpm_info() { :; }
 fi
-shopt -s extglob
+shopt -s extglob nullglob
 
 ################################################################################
 
@@ -165,7 +165,7 @@ __bpm_list_enabled_by_deps() {
     (
     [[ -d "$BPM_HOME"/enabled ]] || return 1
     cd "$BPM_HOME"/enabled >/dev/null
-    local latest=$(command ls -tdL . * | head -n 1)
+    local latest=$(command ls -tdL . * 2>/dev/null | head -n 1)
     # echo $latest >&2
     deps="$BPM_TMPDIR"/enabled.deps
     if [[ "$deps" -nt $latest ]]; then
