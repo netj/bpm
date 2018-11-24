@@ -165,10 +165,10 @@ __bpm_list_enabled_by_deps() {
     (
     [[ -d "$BPM_HOME"/enabled ]] || return 1
     cd "$BPM_HOME"/enabled >/dev/null
-    local latest=$(command ls -tdL . * 2>/dev/null | head -n 1)
+    local latest=$(command ls -tdL . ./* 2>/dev/null | sed -n 2p)
     # echo $latest >&2
     deps="$BPM_TMPDIR"/enabled.deps
-    if [[ "$deps" -nt $latest ]]; then
+    if [[ -h $latest && "$deps" -nt $latest ]]; then
         cat "$deps"
     else
         __bpm_info "computing dependencies..." >&2
