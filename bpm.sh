@@ -35,7 +35,7 @@ if ${BPM_LOADED:-false}; then
 else
     __bpm_info() { :; }
 fi
-shopt -s extglob nullglob
+shopt -s extglob
 
 ################################################################################
 
@@ -163,12 +163,12 @@ complete -F __bpmcomp bpm
 # compile all enabled plugins
 __bpm_list_enabled_by_deps() {
     (
-    [[ -d "$BPM_HOME"/enabled ]] || return 1
+    mkdir -p "$BPM_HOME"/enabled
     cd "$BPM_HOME"/enabled >/dev/null
-    local latest=$(command ls -tdL . ./* 2>/dev/null | sed -n 2p)
-    # echo $latest >&2
+    # find the latest enabled to detect bpm on/off or any updated plugins (which may have new Requires:) to decide if enabled.deps need be refreshed
+    local latest=$(shopt -s nullglob; command ls -tdL . ./* 2>/dev/null | head -n 1)
     deps="$BPM_TMPDIR"/enabled.deps
-    if [[ -h $latest && "$deps" -nt $latest ]]; then
+    if [[ "$deps" -nt $latest ]]; then
         cat "$deps"
     else
         __bpm_info "computing dependencies..." >&2
