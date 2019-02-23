@@ -168,7 +168,7 @@ __bpm_list_enabled_by_deps() {
     # find the latest enabled to detect bpm on/off or any updated plugins (which may have new Requires:) to decide if enabled.deps need be refreshed
     local latest=$(shopt -s nullglob; command ls -tdL . ./* 2>/dev/null | head -n 1)
     deps="$BPM_TMPDIR"/enabled.deps
-    if [[ "$deps" -nt $latest ]]; then
+    if [[ "$deps" -nt "$latest" ]]; then
         cat "$deps"
     else
         __bpm_info "computing dependencies..." >&2
