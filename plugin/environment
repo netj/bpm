@@ -10,9 +10,8 @@ bash_plugin_load() {
     # variables
     hostnickname=${HOSTNAME%%.*}
     hostdomain=${HOSTNAME#*.}
-    local uname=`uname`
     # platform specific settings
-    case $uname in
+    case $(uname) in
         Darwin) # Mac OS X
             # XXX path_helper does not set MANPATH unless it was already in the env
             # XXX some say MANPATH in MacOS X >= 10.2 became deprecated, but
@@ -20,20 +19,20 @@ bash_plugin_load() {
             : ${MANPATH:=}
             export MANPATH
             # XXX and since path_helper messes up with your PATH, let's preserve it
-            local PATH_orig=$PATH
-            eval `/usr/libexec/path_helper -s`
+            PATH_orig=$PATH
+            eval "$(/usr/libexec/path_helper -s)"
             PATH=$PATH_orig
             # some stuffs get installed on /usr/local
             bash_insert_path PATH /usr/local/sbin /usr/local/bin
             bash_insert_path MANPATH /usr/local/man /usr/local/share/man
             if type brew &>/dev/null; then
                 # Prefer Homebrew (http://mxcl.github.com/homebrew/)
-                local brewPrefix=`brew --prefix`
-                bash_insert_path PATH "$brewPrefix"/sbin "$brewPrefix"/bin
-                bash_insert_path MANPATH "$brewPrefix"/man "$brewPrefix"/share/man
+                brew_prefix=${brew_prefix:-$(brew --prefix)}
+                bash_insert_path PATH "$brew_prefix"/sbin "$brew_prefix"/bin
+                bash_insert_path MANPATH "$brew_prefix"/man "$brew_prefix"/share/man
                 # prefer GNU coreutils to BSD ones
-                bash_insert_path PATH "$brewPrefix/opt/coreutils/libexec/gnubin"
-                bash_insert_path MANPATH "$brewPrefix/opt/coreutils/libexec/gnuman"
+                bash_insert_path PATH "$brew_prefix/opt/coreutils/libexec/gnubin"
+                bash_insert_path MANPATH "$brew_prefix/opt/coreutils/libexec/gnuman"
             elif [ -x /opt/local/bin/port ]; then
                 # Paths for MacPorts (http://www.macports.org/)
                 bash_insert_path PATH /opt/local/sbin /opt/local/libexec/gnubin /opt/local/bin
@@ -137,9 +136,23 @@ bash_plugin_interactive() {
     else
         bash_default_alias .. "cd .."
     fi
-    local uname=`uname`
+    # smarter cd that accepts path to files not just dirs
+    cd() {
+        local d= args=; args=()
+        for d; do
+            case $d in
+                -*) # passthru options
+                    ;;
+                *) # use dirname of non-directories
+                    [[ ! -e "$d" || -d "$d" ]] || d=$(dirname "$d")
+            esac
+            args+=("$d")
+        done
+        builtin cd "${args[@]}"
+    }
+    uname=`uname`
     # ls on several platforms
-    local ls_o=
+    ls_o=
     if ls --version 2>&1 | grep 'Free Software Foundation' >/dev/null; then
         # GNU ls
         ls_o="-F --color=auto"
@@ -155,6 +168,8 @@ bash_plugin_interactive() {
         esac
     fi
     bash_default_alias ls "ls $ls_o"
+    unset ls_o
+    unset uname
     # ls idioms
     bash_default_alias ll "ls -l"
     bash_default_alias la "ls -A"
@@ -171,14 +186,19 @@ bash_plugin_interactive() {
     bash_default_alias dirs "dirs -p"
     # keep history clean and long enough
     # See: http://briancarper.net/blog/248/
-    bash_add_prompt "history -a"
-    bash_default HISTSIZE     1024
-    bash_default HISTFILESIZE 102400
-    bash_default HISTTIMEFORMAT '%m-%d %T  '
+    # See: https://sanctum.geek.nz/arabesque/better-bash-history/
+    [[ -n ${SHELL_SESSION_DID_INIT:-} ]] ||
+        # unless /etc/bashrc_Apple_Terminal on macOS is managing the history
+        bash_add_prompt "history -a" # immediately append history to file
+    #shopt -s cmdhist # keep multiline as a single history entry  # already done above
+    bash_default HISTSIZE     1048576
+    bash_default HISTFILESIZE 1048576
+    bash_default HISTTIMEFORMAT '%F %T  '
     bash_default HISTCONTROL erasedups
     bash_add_with_separator : HISTIGNORE \
         "&" "[bf]g" cd .. - \
         "l[salt]" lal llt lalt \
+        history \
         #
     # ignore some annoying files when completing
     bash_add_with_separator : FIGNORE \

@@ -21,7 +21,11 @@
 # TODO separate login stuffs from interactive
 bash_plugin_login() {
     # we can't do much if tmux is not available
-    type tmux &>/dev/null || return
+    if type tmux &>/dev/null; then
+    # use a dedicated $TMUX_TMPDIR for current $HOME for better isolation
+    export TMUX_TMPDIR="${TMPDIR:-/tmp}/tmux-$UID$HOME"
+    mkdir -p "$TMUX_TMPDIR"
+    chmod a=,u+rwX "${TMUX_TMPDIR%$HOME}"
     bash_default auto_tmux_env_root /tmp/auto-tmux.${SUDO_USER:-$LOGNAME}
     # a shorthand for enabling auto-tmux
     atmux() { auto_tmux_attach_at_login=true bash -l; }
@@ -34,6 +38,7 @@ bash_plugin_login() {
     atmux-save() {
         [ -f "$auto_tmux_link" ] || return
         chmod +w "$auto_tmux_link"
+        { echo "# Saved: $(date +%FT%T)"
         local n=
         for n in SSH_CLIENT SSH_CONNECTION SSH_TTY \
             SSH_AUTH_SOCK SSH_AGENT_PID \
@@ -45,7 +50,8 @@ bash_plugin_login() {
             else
                 echo "unset $n"
             fi
-        done >"$auto_tmux_link" 2>/dev/null
+        done
+        } >"$auto_tmux_link" 2>/dev/null
         chmod a-w "$auto_tmux_link"
     }
     -atmux-all() {
@@ -182,8 +188,8 @@ bash_plugin_login() {
         fi
         # clean up stale environment snapshots first
         -atmux-cleanup
-        local conn=$$
-        auto_tmux_env="$auto_tmux_env_root/$conn"
+        auto_tmux_conn=$$
+        auto_tmux_env="$auto_tmux_env_root/$auto_tmux_conn"
         rm -f "$auto_tmux_env"
         touch "$auto_tmux_env"
         chmod a=,u=rw "$auto_tmux_env"
@@ -192,20 +198,20 @@ bash_plugin_login() {
         -atmux-unload() { rm -f "$auto_tmux_env"; }
         bash_add_unloader -atmux-unload
         
-        echo "auto-tmux: connection #$conn"
+        echo "auto-tmux: connection #$auto_tmux_conn"
         
         # if it seems we're relying on Kerberos+AFS, put tmux in its own PAG
         # with a fresh AFS token to cope with file access problems in the
         # resumed tmux sessions.
-        local hasKerberosAndAFS=false
+        _auto_tmux_should_cope_with_krb_afs=false
         [ -z "${KRB5CCNAME:-}" ] || ! type aklog &>/dev/null || ! type pagsh &>/dev/null || ! klist &>/dev/null || {
-            hasKerberosAndAFS=true
+            _auto_tmux_should_cope_with_krb_afs=true
             tmux() { pagsh -c "aklog; exec tmux $(bash_escape "$@")"; }
         }
 
         -atmux-loop() {
         # decide default behavior (to resume or just enter the shell)
-        local default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
+        default_key=r; ${auto_tmux_attach_at_login:-true} || default_key=s
         # a wrapper for invoking tmux
         tmux_() {
             tmux -2 "$@"
@@ -214,6 +220,7 @@ bash_plugin_login() {
         # ask what to do
         local key=
         bash_getkey key "auto-tmux: [r]esume, create a [n]ew tmux session, or [s*]hell? " 1 $default_key
+        unset default_key
         # new session should be started if there are no sessions yet
         [ x"$key" != x"r" ] || [ $(tmux list-sessions 2>/dev/null | wc -l) -gt 0 ] || key=n
         # take action depending on user input
@@ -225,7 +232,7 @@ bash_plugin_login() {
                     ;;
                 [rR]) # otherwise, default is to resume
                     echo "auto-tmux: resuming previous session"
-                    ! $hasKerberosAndAFS || {
+                    ! $_auto_tmux_should_cope_with_krb_afs || {
                         # refresh AFS token before attaching
                         tmux set-environment -g KRB5CCNAME "$KRB5CCNAME"
                         tmux new-window -d aklog
@@ -248,6 +255,7 @@ bash_plugin_login() {
         }
         # get into auto tmux loop after loading everything (hence, showing prompt)
         bash_add_prompt -atmux-loop
+    fi
     fi
 }
 

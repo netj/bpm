@@ -91,15 +91,14 @@ bash_remove_with_separator() {
     local flg=; [[ $(declare -p $name 2>/dev/null) =~ ^declare\ -x ]] || flg=-n
     local val=
     for val in "$@"; do
-        if [[ "${!name}" =~ $sep$val$sep ]]; then
+        ! [[ "${!name}" =~ $sep$val$sep ]] ||
             export $flg $name="${!name//$sep$val$sep/$sep}"
-        elif [[ "${!name}" =~ ^$val$sep ]]; then
+        ! [[ "${!name}" =~ ^$val$sep ]] ||
             export $flg $name="${!name#$val$sep}"
-        elif [[ "${!name}" =~ $sep$val$ ]]; then
+        ! [[ "${!name}" =~ $sep$val$ ]] ||
             export $flg $name="${!name%$sep$val}"
-        elif [[ "${!name}" =~ ^$val$ ]]; then
+        ! [[ "${!name}" =~ ^$val$ ]] ||
             export $flg $name=
-        fi
     done
 }
 
@@ -150,6 +149,7 @@ bash_insert_path() { bash_remove_path "$@"; bash_insert_path_if_not "$@"; }
     eval -- "shopt -s extglob
         $1=\${$1//*( );*( )/;}
         $1=\${$1//;;/;}
+        $1=\${$1//; ;/;}
         "
 }
 bash_add_command_if_not() {

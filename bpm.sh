@@ -20,9 +20,9 @@
 
 case ${BASH:-} in */bash)
 BPM=${BASH_SOURCE:-$0}
-BPM_HOME=$(cd $(dirname "$BPM") >/dev/null; pwd -P)
+BPM_HOME=$(cd "$(dirname "$BPM")" >/dev/null; pwd -P)
 BPM_TMPDIR=${BPM_TMPDIR:-$(
-        d="${TMPDIR:-/tmp}/bpm-$USER"
+        d="${TMPDIR:-/tmp}/bpm-${USER:-$(id -un)}"
         mkdir -p "$d"
         chmod go= "$d"
         echo "$d"
@@ -139,7 +139,7 @@ __bpmcomp() {
     local cur prev
     COMPREPLY=()
     _get_comp_words_by_ref cur prev
-    if [[ ${#COMP_WORDS[@]} > 2 ]]; then
+    if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
         case ${COMP_WORDS[1]} in
             find|info)
                 COMPREPLY=($(compgen -W "$(bpm find)" -- "$cur"))
@@ -163,12 +163,12 @@ complete -F __bpmcomp bpm
 # compile all enabled plugins
 __bpm_list_enabled_by_deps() {
     (
-    [[ -d "$BPM_HOME"/enabled ]] || return 1
+    mkdir -p "$BPM_HOME"/enabled
     cd "$BPM_HOME"/enabled >/dev/null
-    local latest=$(command ls -tdL . * | head -n 1)
-    # echo $latest >&2
+    # find the latest enabled to detect bpm on/off or any updated plugins (which may have new Requires:) to decide if enabled.deps need be refreshed
+    local latest=$(shopt -s nullglob; command ls -tdL . ./* 2>/dev/null | head -n 1)
     deps="$BPM_TMPDIR"/enabled.deps
-    if [[ "$deps" -nt $latest ]]; then
+    if [[ "$deps" -nt "$latest" ]]; then
         cat "$deps"
     else
         __bpm_info "computing dependencies..." >&2
@@ -224,9 +224,7 @@ __bpm_compile() {
             . "$src"
             # and generate code
             {
-                echo "# $bash_plugin"
-                echo '__bpm_load1() {'
-                echo 'local bash_plugin='\'"$bash_plugin"\'''
+                printf 'bash_plugin=%q\n' "$bash_plugin"
                 # load for all shells: {non-,}interactive-{non-,}login
                 if type bash_plugin_load &>/dev/null; then
                     type bash_plugin_load | tail -n +3
@@ -248,95 +246,47 @@ __bpm_compile() {
                     fi
                     echo 'fi'
                 fi
-                echo '}'
-                echo '__bpm_load1'
+                echo
             } >"$compiled"
             ) || rm -f "$compiled"
         fi
         ! [[ -s "$compiled" ]] || cat "$compiled" >>"$script"
     done
     {
-        echo
-        echo 'unset -f __bpm_load1'
+        echo 'unset bash_plugin'
     } >>"$script"
 }
 
 __bpm_compile_enabled() {
     local script="$BPM_TMPDIR"/compiled.enabled.sh
+    # create a critical section to have only one compilation at a time
+    ( set -o noclobber
+    until (ps -o pid=,command= -p $$ >"$script".lock); do
+        pid=$(awk '{print $1}' <"$script".lock)
+        [[ -z "$pid" || $(ps -o pid=,command= -p "$pid") != $(cat "$script".lock) ]] || continue
+        [[ -z "$pid" ]] || kill -TERM "$pid" || true
+        rm -f "$script".lock
+    done) 2>/dev/null
     if [[ ! "$script" -nt "$BPM_HOME"/plugin ||
           ! "$script" -nt "$BPM_HOME"/enabled ||
           ! "$script" -nt "$BPM" ]]; then
         __bpm_info "updating $script" >&2
-        __bpm_compile "$script" $(__bpm_list_enabled_by_deps)
+        __bpm_compile "$script.$$" $(__bpm_list_enabled_by_deps)
+        mv -f "$script.$$" "$script"
     fi
+    rm -f "$script".lock
     echo "$script"
 }
 
 __bpm_compiled=$(__bpm_compile_enabled)
 unset -f __bpm_compile __bpm_compile_enabled __bpm_list_enabled_by_deps
 
-# prepare environment to source the compiled plugin load script
-unset -f builtin declare source
-if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    __bpm_loader_defined_variables() {
-        declare -p | bash -c '
-            declare() {
-                case $2 in *=*)
-                printf "%s\t%s\t%s\n" "$1" "${2%%=*}" \
-    # XXX not considering values changes of variables
-    # "${2//[
-    #]/\\n}"
-                esac
-            }
-            builtin source /dev/stdin
-        ' | sort
-    }
-else # bash < 4's declare -p has a slightly different format
-    __bpm_loader_defined_variables() {
-        (
-        unset -f -- $(declare -F | sed 's/.* -f //')
-        declare -p | sed 's/\([^=]*\)=\(.*\)/	\1	/'
-        ) | sort
-    }
-fi
-__bpm_loader_hijack_source() {
-: ${__bpm_loader_tmpdir:=$(mkdir -p "$BPM_TMPDIR"/loader.$$ && echo "$BPM_TMPDIR"/loader.$$)}
-source() {
-    # track which variables have changed during source
-    __bpm_loader_defined_variables >"$__bpm_loader_tmpdir"/vars.before
-    __bpm_loader_preserve_changed_vars() {
-        declare -p $(__bpm_loader_defined_variables |
-            comm -13 "$__bpm_loader_tmpdir"/vars.before - |
-            cut -f2) >"$__bpm_loader_tmpdir"/vars.sourced
-    }
-    __bpm_loader_source() {
-        unset -f source .  # pause hijacking uses of source/.
-        builtin source "$@"
-        trap __bpm_loader_preserve_changed_vars RETURN
-    }
-    __bpm_loader_source "$@"
-    trap - RETURN
-    # declare all changed variables as global
-    declare() { builtin declare -g "$@" 2>/dev/null; }
-    builtin source "$__bpm_loader_tmpdir"/vars.sourced 2>/dev/null
-    unset -f declare \
-        __bpm_loader_source \
-        __bpm_loader_preserve_changed_vars \
-        #
-    __bpm_loader_hijack_source  # resume hijacking uses of source/.
-}
-.() { source "$@"; }
-}
-__bpm_loader_hijack_source
-
 # then source the plugins
 builtin source "$__bpm_compiled"
 BPM_LOADED=true
 
 # and restore the environment
-rm -rf -- "$__bpm_loader_tmpdir"
-unset -v __bpm_compiled __bpm_loader_tmpdir
-unset -f __bpm_loader_defined_variables __bpm_loader_hijack_source source .
+unset -v __bpm_compiled
 
 ################################################################################
 
